@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.auth_service import AuthService
+from app_embalagem.views.cadastro_usuario_window import CadastroUsuarioWindow
 from app_embalagem.views.page_admin import PageAdmin
 from app_embalagem.views.page_operador import PageOperador
 
@@ -38,7 +39,12 @@ class LoginWindow(QWidget):
         botoes = QHBoxLayout()
         entrar_btn = QPushButton("Entrar")
         entrar_btn.clicked.connect(self._fazer_login)
+
+        cadastro_btn = QPushButton("Cadastrar usuário")
+        cadastro_btn.clicked.connect(self._abrir_cadastro_usuario)
+
         botoes.addWidget(entrar_btn)
+        botoes.addWidget(cadastro_btn)
         layout.addLayout(botoes)
         self.setLayout(layout)
 
@@ -48,6 +54,10 @@ class LoginWindow(QWidget):
             self.auth_service.criar_usuario_inicial(session)
         finally:
             session.close()
+
+    def _abrir_cadastro_usuario(self):
+        self.w_cadastro_usuario = CadastroUsuarioWindow()
+        self.w_cadastro_usuario.show()
 
     def _fazer_login(self):
         session = get_session()
