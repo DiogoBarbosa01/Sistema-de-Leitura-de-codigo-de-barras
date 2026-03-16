@@ -115,3 +115,13 @@ O executável ficará em `dist/ControleEmbalagem`.
   - `MMMM`: matrícula (4 dígitos, com zero à esquerda se necessário)
   - `UUUUUU`: identificador único interno sequencial
 - Após gerar, a tela mostra pré-visualização da etiqueta e botão **Imprimir**.
+
+## 11) Leitura automática por celular USB (ADB)
+- A tela de scanner agora monitora celular conectado por USB usando **ADB**.
+- Quando um código novo é detectado via USB, o sistema processa automaticamente e abre uma janela com os dados da caixa.
+- Pré-requisitos:
+  1. `adb` instalado no PC
+  2. depuração USB habilitada no Android
+  3. celular autorizado no ADB (`adb devices`)
+  4. app do celular escrevendo o último código lido no arquivo `/sdcard/embalagem_scan_code.txt`
+- O monitor não bloqueia o sistema: se o ADB não estiver disponível, o scanner manual continua funcionando normalmente.
