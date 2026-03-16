@@ -33,7 +33,7 @@ class ScanService:
             )
             return {"ok": True, "tipo": "caixa", "caixa": caixa, "mensagem": f"Caixa {caixa.codigo_caixa} embalada com sucesso."}
 
-        return {"ok": False, "mensagem": "Código inválido. Use FUNC-xxxx ou CX-xxxxxx."}
+        return {"ok": False, "mensagem": "Código inválido. Use FUNC-xxxx ou um código de caixa iniciado por CX-."}
 
     def processar_scan_celular(self, session, codigo: str, funcionario_atual=None):
         return self.processar_scan(session, codigo, funcionario_atual=funcionario_atual, origem="celular")

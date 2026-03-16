@@ -4,7 +4,12 @@ def validar_texto_obrigatorio(valor: str, campo: str):
     return None
 
 
-def validar_quantidade(valor: str):
-    if not valor.isdigit() or int(valor) <= 0:
-        return "Quantidade deve ser um número inteiro maior que zero."
+def validar_metros(valor: str):
+    try:
+        metros = float(valor.replace(",", "."))
+    except ValueError:
+        return "Metros deve ser um número válido (ex.: 150.5)."
+
+    if metros <= 0:
+        return "Metros deve ser maior que zero."
     return None

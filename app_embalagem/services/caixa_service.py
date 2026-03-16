@@ -1,3 +1,5 @@
+import re
+import unicodedata
 from datetime import date, datetime
 
 from sqlalchemy import func, select
@@ -13,13 +15,30 @@ class CaixaService:
     STATUS_EMBALADA = "embalada"
 
     @staticmethod
-    def gerar_proximo_codigo(session) -> str:
-        total = session.scalar(select(func.count(Caixa.id))) or 0
-        return f"CX-{total + 1:06d}"
+    def _extrair_sigla_funcionario(nome_funcionario: str) -> str:
+        nome = unicodedata.normalize("NFKD", nome_funcionario).encode("ascii", "ignore").decode("ascii")
+        letras = re.sub(r"[^A-Za-z]", "", nome).upper()
+        sigla = (letras[:4] or "XXXX").ljust(4, "X")
+        return sigla
 
-    def criar_caixa(self, session, produto: str, quantidade: int) -> tuple[Caixa, str]:
-        codigo = self.gerar_proximo_codigo(session)
-        caixa = Caixa(codigo_caixa=codigo, produto=produto, quantidade=quantidade, status=self.STATUS_CRIADA)
+    def gerar_proximo_codigo(self, session, nome_funcionario: str) -> tuple[str, str, int]:
+        total = session.scalar(select(func.count(Caixa.id))) or 0
+        sequencia = total + 1
+        sigla = self._extrair_sigla_funcionario(nome_funcionario)
+        data_codigo = datetime.now().strftime("%d%m%y")
+        codigo = f"CX-{data_codigo}-{sigla}-{sequencia:04d}"
+        return codigo, sigla, sequencia
+
+    def criar_caixa(self, session, arte: str, artigo: str, metros: float, nome_funcionario: str) -> tuple[Caixa, str]:
+        codigo, sigla, _ = self.gerar_proximo_codigo(session, nome_funcionario)
+        caixa = Caixa(
+            codigo_caixa=codigo,
+            arte=arte,
+            artigo=artigo,
+            metros=metros,
+            sigla_funcionario=sigla,
+            status=self.STATUS_CRIADA,
+        )
         session.add(caixa)
         session.commit()
         session.refresh(caixa)
