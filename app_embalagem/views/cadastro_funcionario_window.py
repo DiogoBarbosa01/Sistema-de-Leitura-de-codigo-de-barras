@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QCheckBox, QFormLayout, QMessageBox, QPushButton, 
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.funcionario_service import FuncionarioService
 from app_embalagem.utils.validators import validar_texto_obrigatorio
+from app_embalagem.utils.theme import APP_STYLESHEET
 
 
 class CadastroFuncionarioWindow(QWidget):
@@ -11,6 +12,7 @@ class CadastroFuncionarioWindow(QWidget):
         self.service = FuncionarioService()
         self.setWindowTitle("Cadastro de Funcionário")
         self._montar_ui()
+        self.setStyleSheet(APP_STYLESHEET)
 
     def _montar_ui(self):
         layout = QVBoxLayout()

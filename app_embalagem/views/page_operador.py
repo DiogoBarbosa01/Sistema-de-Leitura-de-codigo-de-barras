@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QGridLayout, QLabel, QPushButton, QVBoxLayout, QWi
 from app_embalagem.views.dashboard_window import DashboardWindow
 from app_embalagem.views.historico_window import HistoricoWindow
 from app_embalagem.views.scanner_window import ScannerWindow
+from app_embalagem.utils.theme import APP_STYLESHEET
 
 
 class PageOperador(QWidget):
@@ -11,6 +12,7 @@ class PageOperador(QWidget):
         self.usuario = usuario
         self.setWindowTitle(f"Página Operador - {usuario.nome}")
         self._montar_ui()
+        self.setStyleSheet(APP_STYLESHEET)
 
     def _montar_ui(self):
         layout = QVBoxLayout()

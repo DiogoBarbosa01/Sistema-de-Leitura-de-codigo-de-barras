@@ -2,7 +2,7 @@ import re
 import unicodedata
 from datetime import date, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import desc, func, select
 
 from app_embalagem.models.caixa import Caixa
 from app_embalagem.models.movimentacao import Movimentacao
@@ -15,25 +15,38 @@ class CaixaService:
     STATUS_EMBALADA = "embalada"
 
     @staticmethod
-    def _extrair_sigla_funcionario(nome_funcionario: str) -> str:
+    def _mes_para_letra(data_ref: datetime) -> str:
+        return chr(ord("A") + data_ref.month - 1)
+
+    @staticmethod
+    def _duas_letras_funcionario(nome_funcionario: str) -> str:
         nome = unicodedata.normalize("NFKD", nome_funcionario).encode("ascii", "ignore").decode("ascii")
         letras = re.sub(r"[^A-Za-z]", "", nome).upper()
-        sigla = (letras[:4] or "XXXX").ljust(4, "X")
-        return sigla
+        return (letras[:2] or "XX").ljust(2, "X")
 
-    def gerar_proximo_codigo(self, session, nome_funcionario: str) -> tuple[str, str, int]:
+    @staticmethod
+    def _matricula_4(matricula: str) -> str:
+        digitos = re.sub(r"\D", "", matricula)
+        return (digitos[-4:] if digitos else "0000").rjust(4, "0")
+
+    def gerar_proximo_codigo(self, session, nome_funcionario: str, matricula: str) -> tuple[str, str, str]:
+        agora = datetime.now()
+        ano = agora.strftime("%y")
+        dia = agora.strftime("%d")
+        mes_letra = self._mes_para_letra(agora)
+        sigla2 = self._duas_letras_funcionario(nome_funcionario)
+        matricula4 = self._matricula_4(matricula)
+
         total = session.scalar(select(func.count(Caixa.id))) or 0
-        sequencia = total + 1
-        sigla = self._extrair_sigla_funcionario(nome_funcionario)
-        data_codigo = datetime.now().strftime("%d%m%y")
-        codigo = f"CX-{data_codigo}-{sigla}-{sequencia:04d}"
-        return codigo, sigla, sequencia
+        uid = f"{total + 1:06d}"
+        codigo = f"CX-{ano}{dia}{mes_letra}{sigla2}{matricula4}{uid}"
+        return codigo, sigla2, uid
 
-    def criar_caixa(self, session, arte: str, artigo: str, metros: float, nome_funcionario: str) -> tuple[Caixa, str]:
-        codigo, sigla, _ = self.gerar_proximo_codigo(session, nome_funcionario)
+    def criar_caixa(self, session, numero_pedido: str, artigo: str, metros: float, nome_funcionario: str, matricula: str) -> tuple[Caixa, str]:
+        codigo, sigla, uid = self.gerar_proximo_codigo(session, nome_funcionario, matricula)
         caixa = Caixa(
             codigo_caixa=codigo,
-            arte=arte,
+            arte=numero_pedido,
             artigo=artigo,
             metros=metros,
             sigla_funcionario=sigla,
@@ -44,6 +57,10 @@ class CaixaService:
         session.refresh(caixa)
         caminho_barcode = BarcodeService.gerar_codigo_barras(codigo)
         return caixa, caminho_barcode
+
+    def listar_recentes(self, session, limite: int = 20):
+        stmt = select(Caixa).order_by(desc(Caixa.data_criacao)).limit(limite)
+        return session.scalars(stmt).all()
 
     def buscar_por_codigo(self, session, codigo: str) -> Caixa | None:
         return session.scalar(select(Caixa).where(Caixa.codigo_caixa == codigo))

@@ -15,7 +15,8 @@ from PySide6.QtWidgets import (
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.caixa_service import CaixaService
 from app_embalagem.services.funcionario_service import FuncionarioService
-from app_embalagem.utils.validators import validar_metros, validar_texto_obrigatorio
+from app_embalagem.utils.theme import APP_STYLESHEET
+from app_embalagem.utils.validators import validar_metros, validar_numero_pedido, validar_texto_obrigatorio
 
 
 class CadastroCaixaWindow(QWidget):
@@ -27,19 +28,26 @@ class CadastroCaixaWindow(QWidget):
         self.setWindowTitle("Cadastro de Caixa / Etiqueta")
         self._montar_ui()
         self._carregar_funcionarios()
+        self.setStyleSheet(APP_STYLESHEET)
 
     def _montar_ui(self):
         from PySide6.QtWidgets import QLineEdit
 
         layout = QVBoxLayout()
+        titulo = QLabel("Cadastro de Caixa")
+        titulo.setObjectName("tituloPagina")
+        layout.addWidget(titulo)
+
         form = QFormLayout()
 
-        self.arte_input = QLineEdit()
+        self.numero_pedido_input = QLineEdit()
+        self.numero_pedido_input.setMaxLength(4)
+        self.numero_pedido_input.setPlaceholderText("0000")
         self.artigo_input = QLineEdit()
         self.metros_input = QLineEdit()
         self.funcionario_combo = QComboBox()
 
-        form.addRow("ARTE:", self.arte_input)
+        form.addRow("Nº do pedido:", self.numero_pedido_input)
         form.addRow("Artigo:", self.artigo_input)
         form.addRow("Metros:", self.metros_input)
         form.addRow("Funcionário:", self.funcionario_combo)
@@ -74,21 +82,21 @@ class CadastroCaixaWindow(QWidget):
             self.funcionario_combo.clear()
             for f in funcionarios:
                 if f.ativo:
-                    self.funcionario_combo.addItem(f"{f.nome} ({f.codigo_barras})", f.nome)
+                    self.funcionario_combo.addItem(f"{f.nome} ({f.matricula})", {"nome": f.nome, "matricula": f.matricula})
         finally:
             session.close()
 
     def _gerar_etiqueta(self):
-        erro_arte = validar_texto_obrigatorio(self.arte_input.text(), "ARTE")
+        erro_pedido = validar_numero_pedido(self.numero_pedido_input.text())
         erro_artigo = validar_texto_obrigatorio(self.artigo_input.text(), "artigo")
         erro_metros = validar_metros(self.metros_input.text().strip())
 
-        if erro_arte or erro_artigo or erro_metros:
-            QMessageBox.warning(self, "Validação", erro_arte or erro_artigo or erro_metros)
+        if erro_pedido or erro_artigo or erro_metros:
+            QMessageBox.warning(self, "Validação", erro_pedido or erro_artigo or erro_metros)
             return
 
-        nome_funcionario = self.funcionario_combo.currentData()
-        if not nome_funcionario:
+        funcionario = self.funcionario_combo.currentData()
+        if not funcionario:
             QMessageBox.warning(self, "Validação", "Cadastre ao menos um funcionário ativo para gerar a etiqueta.")
             return
 
@@ -96,17 +104,18 @@ class CadastroCaixaWindow(QWidget):
         try:
             caixa, caminho = self.caixa_service.criar_caixa(
                 session,
-                arte=self.arte_input.text().strip(),
+                numero_pedido=self.numero_pedido_input.text().strip(),
                 artigo=self.artigo_input.text().strip(),
                 metros=float(self.metros_input.text().strip().replace(",", ".")),
-                nome_funcionario=nome_funcionario,
+                nome_funcionario=funcionario["nome"],
+                matricula=funcionario["matricula"],
             )
             self.ultimo_arquivo = caminho
             self.info_label.setText(f"Arquivo de etiqueta: {caminho}")
             self._mostrar_preview(caminho)
             self.imprimir_btn.setEnabled(True)
-            QMessageBox.information(self, "Sucesso", f"Etiqueta gerada para {caixa.codigo_caixa}.")
-            self.arte_input.clear()
+            QMessageBox.information(self, "Sucesso", "Etiqueta gerada e caixa registrada com sucesso.")
+            self.numero_pedido_input.clear()
             self.artigo_input.clear()
             self.metros_input.clear()
         except Exception as exc:

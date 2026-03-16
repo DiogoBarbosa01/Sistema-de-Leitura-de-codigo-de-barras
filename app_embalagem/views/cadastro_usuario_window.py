@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.usuario_service import UsuarioService
 from app_embalagem.utils.validators import validar_texto_obrigatorio
+from app_embalagem.utils.theme import APP_STYLESHEET
 
 
 class CadastroUsuarioWindow(QWidget):
@@ -22,6 +23,7 @@ class CadastroUsuarioWindow(QWidget):
         self.service = UsuarioService()
         self.setWindowTitle("Cadastro de Usuário")
         self._montar_ui()
+        self.setStyleSheet(APP_STYLESHEET)
         self._carregar_usuarios()
 
     def _montar_ui(self):

@@ -74,7 +74,7 @@ python -m app_embalagem.main
 
 ## 6) Fluxo do scanner
 1. Escaneie `FUNC-xxxx` para selecionar funcionário ativo.
-2. Escaneie o código da caixa `CX-DDMMAA-SIGLA-0001` para finalizar embalagem da caixa.
+2. Escaneie o código da caixa no padrão `CX-AADDMSSMMMMUUUUUU` para finalizar embalagem da caixa.
 3. O campo do scanner mantém foco automaticamente.
 
 ## 7) Leitura por celular
@@ -105,10 +105,13 @@ O executável ficará em `dist/ControleEmbalagem`.
 
 
 ## 10) Regras da etiqueta de caixa
-- Campos da caixa: **ARTE**, **Artigo** e **Metros** (metros de fita na caixa).
+- Campos da caixa: **Nº do pedido** (4 dígitos), **Artigo** e **Metros** (metros de fita na caixa).
 - Ao clicar em **Gerar etiqueta**, o sistema já salva a caixa e gera o barcode em uma única ação.
-- O código da caixa segue o padrão: `CX-DDMMAA-SIGLA-0001`
-  - `DDMMAA`: data atual
-  - `SIGLA`: 4 letras derivadas do nome do funcionário selecionado
-  - `0001`: número sequencial gerado pelo sistema
+- O código da caixa segue o padrão: `CX-AADDMSSMMMMUUUUUU`
+  - `AA`: ano (2 dígitos)
+  - `DD`: dia (2 dígitos)
+  - `M`: mês em letra (`A` janeiro ... `L` dezembro)
+  - `SS`: 2 letras do funcionário
+  - `MMMM`: matrícula (4 dígitos, com zero à esquerda se necessário)
+  - `UUUUUU`: identificador único interno sequencial
 - Após gerar, a tela mostra pré-visualização da etiqueta e botão **Imprimir**.

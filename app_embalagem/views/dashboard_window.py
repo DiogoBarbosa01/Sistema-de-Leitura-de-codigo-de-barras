@@ -15,6 +15,7 @@ from app_embalagem.models.funcionario import Funcionario
 from app_embalagem.services.caixa_service import CaixaService
 from app_embalagem.services.movimentacao_service import MovimentacaoService
 from app_embalagem.utils.helpers import formatar_data_hora
+from app_embalagem.utils.theme import APP_STYLESHEET
 
 
 class DashboardWindow(QWidget):
@@ -25,6 +26,7 @@ class DashboardWindow(QWidget):
         self.setWindowTitle("Dashboard de Produção")
         self.resize(900, 560)
         self._montar_ui()
+        self.setStyleSheet(APP_STYLESHEET)
         self._carregar()
 
     def _criar_card(self, titulo: str) -> tuple[QFrame, QLabel]:
