@@ -1,0 +1,62 @@
+from PySide6.QtWidgets import (
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+from app_embalagem.database.connection import get_session
+from app_embalagem.services.auth_service import AuthService
+from app_embalagem.views.main_window import MainWindow
+
+
+class LoginWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.auth_service = AuthService()
+        self.setWindowTitle("Login - Controle de Embalagem")
+        self._montar_ui()
+        self._garantir_admin_padrao()
+
+    def _montar_ui(self):
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Faça login para continuar"))
+
+        form = QFormLayout()
+        self.username_input = QLineEdit()
+        self.senha_input = QLineEdit()
+        self.senha_input.setEchoMode(QLineEdit.Password)
+        form.addRow("Usuário:", self.username_input)
+        form.addRow("Senha:", self.senha_input)
+        layout.addLayout(form)
+
+        botoes = QHBoxLayout()
+        entrar_btn = QPushButton("Entrar")
+        entrar_btn.clicked.connect(self._fazer_login)
+        botoes.addWidget(entrar_btn)
+        layout.addLayout(botoes)
+        self.setLayout(layout)
+
+    def _garantir_admin_padrao(self):
+        session = get_session()
+        try:
+            self.auth_service.criar_usuario_inicial(session)
+        finally:
+            session.close()
+
+    def _fazer_login(self):
+        session = get_session()
+        try:
+            usuario = self.auth_service.autenticar(session, self.username_input.text().strip(), self.senha_input.text())
+            if not usuario:
+                QMessageBox.warning(self, "Falha", "Usuário/senha inválidos ou usuário inativo.")
+                return
+            self.main_window = MainWindow(usuario)
+            self.main_window.show()
+            self.close()
+        finally:
+            session.close()
