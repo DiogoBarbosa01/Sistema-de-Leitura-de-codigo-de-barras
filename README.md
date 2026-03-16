@@ -153,3 +153,6 @@ Exemplos de apps que podem ser usados no Android (com automação/atalho para sa
 - Estrutura de arquivos:
   - `assets/barcodes/<numero_pedido>/`
   - dentro de cada pasta ficam os PNGs gerados para aquele número de pedido.
+
+## 15) Configuração USB no PC (guia dedicado)
+- Veja o arquivo `README_USB_PC.md` para instruções completas de Windows/Linux/macOS e diagnóstico ADB.
