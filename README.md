@@ -95,3 +95,14 @@ O executável ficará em `dist/ControleEmbalagem`.
 ## Observações
 - Etiquetas de código de barras são salvas em `app_embalagem/assets/barcodes/`.
 - Arquitetura em camadas pronta para expansão (novos serviços, telas e integrações).
+
+
+## 9) Perfis e telas iniciais separadas
+- **admin** abre a `PageAdmin` com acesso a:
+  - cadastro de usuário (com perfil `admin` ou `operador`)
+  - cadastro de funcionário
+  - cadastro de caixa
+  - scanner, dashboard e histórico
+- **operador** abre a `PageOperador` com acesso a:
+  - scanner, dashboard e histórico
+
