@@ -98,11 +98,8 @@ O executável ficará em `dist/ControleEmbalagem`.
 
 
 ## 9) Perfis e telas iniciais separadas
-- **admin** abre a `PageAdmin` com acesso a:
-  - cadastro de usuário (com perfil `admin` ou `operador`)
-  - cadastro de funcionário
-  - cadastro de caixa
-  - scanner, dashboard e histórico
+- O cadastro de usuário fica disponível na tela de login (botão **Cadastrar usuário**), com seleção de perfil `admin` ou `operador`.
+- **admin** abre a `PageAdmin` com acesso a cadastro de funcionário, cadastro de caixa, scanner, dashboard e histórico.
 - **operador** abre a `PageOperador` com acesso a:
   - scanner, dashboard e histórico
 

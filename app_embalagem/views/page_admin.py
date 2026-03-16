@@ -2,7 +2,6 @@ from PySide6.QtWidgets import QGridLayout, QLabel, QPushButton, QVBoxLayout, QWi
 
 from app_embalagem.views.cadastro_caixa_window import CadastroCaixaWindow
 from app_embalagem.views.cadastro_funcionario_window import CadastroFuncionarioWindow
-from app_embalagem.views.cadastro_usuario_window import CadastroUsuarioWindow
 from app_embalagem.views.dashboard_window import DashboardWindow
 from app_embalagem.views.historico_window import HistoricoWindow
 from app_embalagem.views.scanner_window import ScannerWindow
@@ -23,23 +22,20 @@ class PageAdmin(QWidget):
         self.scanner_btn = QPushButton("Scanner")
         self.func_btn = QPushButton("Cadastro de Funcionário")
         self.caixa_btn = QPushButton("Cadastro de Caixa")
-        self.user_btn = QPushButton("Cadastro de Usuário")
         self.dash_btn = QPushButton("Dashboard")
         self.hist_btn = QPushButton("Histórico")
 
         self.scanner_btn.clicked.connect(self.abrir_scanner)
         self.func_btn.clicked.connect(self.abrir_funcionarios)
         self.caixa_btn.clicked.connect(self.abrir_caixas)
-        self.user_btn.clicked.connect(self.abrir_usuarios)
         self.dash_btn.clicked.connect(self.abrir_dashboard)
         self.hist_btn.clicked.connect(self.abrir_historico)
 
         botoes.addWidget(self.scanner_btn, 0, 0)
         botoes.addWidget(self.func_btn, 0, 1)
         botoes.addWidget(self.caixa_btn, 1, 0)
-        botoes.addWidget(self.user_btn, 1, 1)
-        botoes.addWidget(self.dash_btn, 2, 0)
-        botoes.addWidget(self.hist_btn, 2, 1)
+        botoes.addWidget(self.dash_btn, 1, 1)
+        botoes.addWidget(self.hist_btn, 2, 0, 1, 2)
 
         layout.addLayout(botoes)
         self.setLayout(layout)
@@ -55,10 +51,6 @@ class PageAdmin(QWidget):
     def abrir_caixas(self):
         self.w_caixa = CadastroCaixaWindow()
         self.w_caixa.show()
-
-    def abrir_usuarios(self):
-        self.w_user = CadastroUsuarioWindow()
-        self.w_user.show()
 
     def abrir_dashboard(self):
         self.w_dash = DashboardWindow()
