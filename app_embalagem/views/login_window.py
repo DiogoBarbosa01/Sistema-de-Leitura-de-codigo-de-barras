@@ -11,7 +11,8 @@ from PySide6.QtWidgets import (
 
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.auth_service import AuthService
-from app_embalagem.views.main_window import MainWindow
+from app_embalagem.views.page_admin import PageAdmin
+from app_embalagem.views.page_operador import PageOperador
 
 
 class LoginWindow(QWidget):
@@ -55,7 +56,12 @@ class LoginWindow(QWidget):
             if not usuario:
                 QMessageBox.warning(self, "Falha", "Usuário/senha inválidos ou usuário inativo.")
                 return
-            self.main_window = MainWindow(usuario)
+
+            if usuario.perfil == "admin":
+                self.main_window = PageAdmin(usuario)
+            else:
+                self.main_window = PageOperador(usuario)
+
             self.main_window.show()
             self.close()
         finally:
