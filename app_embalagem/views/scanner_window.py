@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.scan_service import ScanService
+from app_embalagem.utils.theme import APP_STYLESHEET
 
 
 class ScannerWindow(QWidget):
@@ -20,6 +21,7 @@ class ScannerWindow(QWidget):
         self.funcionario_atual = None
         self.setWindowTitle("Scanner USB / Celular")
         self._montar_ui()
+        self.setStyleSheet(APP_STYLESHEET)
 
     def _montar_ui(self):
         layout = QVBoxLayout()

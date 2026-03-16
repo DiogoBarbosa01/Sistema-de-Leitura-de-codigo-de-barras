@@ -14,6 +14,7 @@ from app_embalagem.database.connection import get_session
 from app_embalagem.services.caixa_service import CaixaService
 from app_embalagem.services.movimentacao_service import MovimentacaoService
 from app_embalagem.utils.helpers import formatar_data_hora
+from app_embalagem.utils.theme import APP_STYLESHEET
 
 
 class HistoricoWindow(QWidget):
@@ -23,6 +24,7 @@ class HistoricoWindow(QWidget):
         self.mov_service = MovimentacaoService()
         self.setWindowTitle("Histórico de Movimentações")
         self._montar_ui()
+        self.setStyleSheet(APP_STYLESHEET)
 
     def _montar_ui(self):
         layout = QVBoxLayout()

@@ -14,6 +14,7 @@ from app_embalagem.services.auth_service import AuthService
 from app_embalagem.views.cadastro_usuario_window import CadastroUsuarioWindow
 from app_embalagem.views.page_admin import PageAdmin
 from app_embalagem.views.page_operador import PageOperador
+from app_embalagem.utils.theme import APP_STYLESHEET
 
 
 class LoginWindow(QWidget):
@@ -22,6 +23,7 @@ class LoginWindow(QWidget):
         self.auth_service = AuthService()
         self.setWindowTitle("Login - Controle de Embalagem")
         self._montar_ui()
+        self.setStyleSheet(APP_STYLESHEET)
         self._garantir_admin_padrao()
 
     def _montar_ui(self):
