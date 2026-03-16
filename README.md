@@ -125,3 +125,31 @@ O executável ficará em `dist/ControleEmbalagem`.
   3. celular autorizado no ADB (`adb devices`)
   4. app do celular escrevendo o último código lido no arquivo `/sdcard/embalagem_scan_code.txt`
 - O monitor não bloqueia o sistema: se o ADB não estiver disponível, o scanner manual continua funcionando normalmente.
+
+## 12) Configurações USB obrigatórias no celular (Android)
+Para o celular ser reconhecido no sistema via USB/ADB:
+1. Ative **Opções do desenvolvedor** no Android.
+2. Ative **Depuração USB**.
+3. Ao conectar no PC, selecione modo USB **Transferência de arquivos (MTP)** (evite somente carregamento).
+4. Aceite o pop-up **Permitir depuração USB** no celular (marque “Sempre permitir”).
+5. No PC, valide com `adb devices` (deve aparecer como `device`).
+
+Se aparecer `unauthorized`, reconecte o cabo e aceite o aviso no celular.
+
+## 13) Aplicativos compatíveis para leitura de código
+O sistema aceita qualquer app de scanner no celular que consiga entregar o texto lido para o arquivo:
+`/sdcard/embalagem_scan_code.txt`
+
+Exemplos de apps que podem ser usados no Android (com automação/atalho para salvar texto):
+- **Barcode Scanner** (ZXing)
+- **QR & Barcode Scanner** (Gamma Play)
+- **Binary Eye**
+- **Scandit Keyboard Wedge** (cenário corporativo)
+
+> Observação: o app precisa exportar o valor lido para arquivo (ou integração equivalente), pois o monitor USB lê desse caminho via ADB.
+
+## 14) Organização dos códigos de barras
+- Foi adicionada a aba **Códigos de Barras** no sistema.
+- Estrutura de arquivos:
+  - `assets/barcodes/<numero_pedido>/`
+  - dentro de cada pasta ficam os PNGs gerados para aquele número de pedido.
