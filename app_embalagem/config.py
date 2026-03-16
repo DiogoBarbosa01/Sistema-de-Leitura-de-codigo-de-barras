@@ -13,7 +13,7 @@ DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
+    "postgresql+psycopg2://postgres:69100@localhost:5432/app_embalagem"
 )
 
 APP_TITLE = "Controle de Embalagem"
