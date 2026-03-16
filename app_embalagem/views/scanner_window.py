@@ -104,7 +104,10 @@ class ScannerWindow(QWidget):
 
     def _verificar_scan_usb_celular(self):
         status = self.mobile_usb_service.status_conexao()
-        self.mobile_status_label.setText(f"Monitor USB celular: {status.mensagem}")
+        if status.conectado:
+            self.mobile_status_label.setText(f"Monitor USB celular: <b style='color:#52d66a'>Conectado</b> - {status.mensagem}")
+        else:
+            self.mobile_status_label.setText(f"Monitor USB celular: <b style='color:#ff5b5b'>Inválido</b> - {status.mensagem}")
 
         codigo = self.mobile_usb_service.ler_codigo_usb()
         if not codigo:

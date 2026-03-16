@@ -1,9 +1,10 @@
 from PySide6.QtWidgets import QGridLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
+from app_embalagem.utils.theme import APP_STYLESHEET
+from app_embalagem.views.codigos_barras_window import CodigosBarrasWindow
 from app_embalagem.views.dashboard_window import DashboardWindow
 from app_embalagem.views.historico_window import HistoricoWindow
 from app_embalagem.views.scanner_window import ScannerWindow
-from app_embalagem.utils.theme import APP_STYLESHEET
 
 
 class PageOperador(QWidget):
@@ -22,14 +23,17 @@ class PageOperador(QWidget):
         self.scanner_btn = QPushButton("Scanner")
         self.dash_btn = QPushButton("Dashboard")
         self.hist_btn = QPushButton("Histórico")
+        self.codigos_btn = QPushButton("Códigos de Barras")
 
         self.scanner_btn.clicked.connect(self.abrir_scanner)
         self.dash_btn.clicked.connect(self.abrir_dashboard)
         self.hist_btn.clicked.connect(self.abrir_historico)
+        self.codigos_btn.clicked.connect(self.abrir_codigos)
 
         botoes.addWidget(self.scanner_btn, 0, 0)
         botoes.addWidget(self.dash_btn, 0, 1)
-        botoes.addWidget(self.hist_btn, 1, 0, 1, 2)
+        botoes.addWidget(self.hist_btn, 1, 0)
+        botoes.addWidget(self.codigos_btn, 1, 1)
 
         layout.addLayout(botoes)
         self.setLayout(layout)
@@ -45,3 +49,7 @@ class PageOperador(QWidget):
     def abrir_historico(self):
         self.w_hist = HistoricoWindow()
         self.w_hist.show()
+
+    def abrir_codigos(self):
+        self.w_codigos = CodigosBarrasWindow()
+        self.w_codigos.show()
