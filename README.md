@@ -41,17 +41,19 @@ GRANT ALL PRIVILEGES ON DATABASE embalagem_db TO embalagem_user;
 (USE O SQL SHELL PARA CRIAR O DB, MUITO MAIS FÁCIL E PRÁTICO)
 
 ## EXTRAS DO TOPICO 2
--Dbeaver ou PgAdmin 4 para monitorar as tabelas em tempo real.(eu prefiro o dbeaver)
--Lembre de criar a porta no sistema meu amigo, ele não tem bola de cristal para linkar automático. 
--Caso esteja sendo seu inicio com o DataBase do sistema e quer mudar uma tabela e ta com preguiça de atualizar o DB devida a alta etapa pior que o site do GOV?
+- Dbeaver ou PgAdmin 4 para monitorar as tabelas em tempo real.(eu prefiro o dbeaver)
+- Lembre de criar a porta no sistema meu amigo, ele não tem bola de cristal para linkar automático. 
+- Caso esteja sendo seu inicio com o DataBase do sistema e quer mudar uma tabela e ta com preguiça de atualizar o DB devida a alta etapa pior que o site do GOV?
 
 No SQL SHELL
-`\c nome do db
+```
+\c nome do db
 #nome do db:DROP SCHEMA public CASCADE;          
 #nome do db:CREATE SCHEMA public;`
-Voce apagou as tabelas antigas e recriou elas do zero agora atualizadas, **lembre sempre de fazer alterações na tabela dessa forma quando ainda não for o sistema original** que está no ar, rapido e prático.
+```
+- Voce apagou as tabelas antigas e recriou elas do zero agora atualizadas, **lembre sempre de fazer alterações na tabela dessa forma quando ainda não for o sistema original** que está no ar, rapido e prático.
 
--caso faça isso e deseja que as tabelas sejam recriadas, só abrir seu app e elas criam novamente do zero.
+- caso faça isso e deseja que as tabelas sejam recriadas, só abrir seu app e elas criam novamente do zero.
 
 ## 3) Configurar ambiente
 
@@ -61,7 +63,7 @@ source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\activate   # Windows
 pip install -r app_embalagem/requirements.txt
 ```
--Caso fique na duvida se a venv esta correta, ele aparece escrito (venv) mas se to for bobado e seu terminal não apareceu, so dar um `ls`
+- Caso fique na duvida se a venv esta correta, ele aparece escrito (venv) mas se to for bobado e seu terminal não apareceu, so dar um `ls`
 
 ## 4) Configurar conexão
 Use variáveis de ambiente (opcional). Se não definir, usa defaults do `config.py`.
@@ -120,7 +122,7 @@ O executável ficará em `dist/ControleEmbalagem`.
 - O cadastro de usuário fica disponível na tela de login (botão **Cadastrar usuário**), com seleção de perfil `admin` ou `operador`.
 - **admin** abre a `PageAdmin` com acesso a cadastro de funcionário, cadastro de caixa, scanner, dashboard e histórico.
 - **operador** abre a `PageOperador` com acesso a:
-  - scanner, dashboard e histórico
+- scanner, dashboard e histórico
 
 
 ## 10) Regras da etiqueta de caixa
@@ -215,12 +217,15 @@ Exemplos de apps que podem ser usados no Android (com automação/atalho para sa
 - Veja o arquivo `README_USB_PC.md` para instruções completas de Windows/Linux/macOS e diagnóstico ADB.
 
 ## 16) PIP INSTALL
- -Todos os PIP install necessários.
--`pip install pyside`
--`pip install sqlalchemy`
--`pip install psycopg2-binary`
--`pip install python-barcode`
--`pip install pillow`
--`pip install pyinstaller`
+ - Todos os PIP install necessários.
+  
+ ```Bash
+  pip install pyside
+- pip install sqlalchemy
+- pip install psycopg2-binary
+- pip install python-barcode
+- pip install pillow
+- pip install pyinstaller
+  ```
 
 Use eles caso necessite abrir o sistema em outros computadores para edição de codigo
