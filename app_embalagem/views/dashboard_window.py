@@ -59,10 +59,8 @@ class DashboardWindow(QWidget):
 
         cards_layout = QHBoxLayout()
         card_hoje, self.total_hoje_label = self._criar_card("Caixas embaladas hoje")
-        card_ultimo_dia, self.ultimo_dia_card_label = self._criar_card("Caixas fechadas no último dia")
         card_online, self.online_label = self._criar_card("Funcionários produzindo (online)")
         cards_layout.addWidget(card_hoje)
-        cards_layout.addWidget(card_ultimo_dia)
         cards_layout.addWidget(card_online)
         root.addLayout(cards_layout)
 
@@ -103,7 +101,6 @@ class DashboardWindow(QWidget):
         session = get_session()
         try:
             total = self.mov_service.total_finalizadas_ultimo_dia(session)
-            self.ultimo_dia_card_label.setText(str(total))
             self.ultimo_dia_info.setText(f"Último dia: {total}")
         finally:
             session.close()
@@ -112,12 +109,9 @@ class DashboardWindow(QWidget):
         session = get_session()
         try:
             total_hoje = self.mov_service.total_finalizadas_hoje(session)
-            total_ultimo_dia = self.mov_service.total_finalizadas_ultimo_dia(session)
             online = self.mov_service.operadores_online(session, janela_minutos=10)
 
             self.total_hoje_label.setText(str(total_hoje))
-            self.ultimo_dia_card_label.setText(str(total_ultimo_dia))
-            self.ultimo_dia_info.setText(f"Último dia: {total_ultimo_dia}")
             self.online_label.setText(str(len(online)))
 
             if online:
@@ -126,7 +120,6 @@ class DashboardWindow(QWidget):
             else:
                 self.online_detalhe.setText("Online: -")
 
-            # mantém tabela rolante com tamanho fixo: novos entram no topo e os mais antigos saem no fim
             ultimas = self.mov_service.ultimas(session, limite=self.LIMITE_TABELA)
             self.mov_table.setRowCount(len(ultimas))
             for i, mov in enumerate(ultimas):

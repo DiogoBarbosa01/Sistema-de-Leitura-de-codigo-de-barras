@@ -1,5 +1,5 @@
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.mobile_request_service import MobileRequestService
@@ -55,13 +55,9 @@ class PageOperador(QWidget):
         subtitulo.setObjectName("subtitulo")
         layout.addWidget(subtitulo)
 
-        self.scan_input = QLineEdit()
-        self.scan_input.setPlaceholderText("Leitura rápida: escaneie/digite código CX-... sem abrir scanner")
-        self.scan_input.returnPressed.connect(self._processar_codigo_manual)
-        layout.addWidget(self.scan_input)
 
         botoes = QGridLayout()
-        self.scanner_btn = QPushButton("Scanner")
+        self.scanner_btn = QPushButton("Busca de Caixa")
         self.dash_btn = QPushButton("Dashboard")
         self.hist_btn = QPushButton("Histórico")
         self.codigos_btn = QPushButton("Códigos de Barras")
@@ -94,12 +90,6 @@ class PageOperador(QWidget):
         finally:
             session.close()
 
-    def _processar_codigo_manual(self):
-        codigo = self.scan_input.text().strip()
-        if not codigo:
-            return
-        self._processar_codigo(codigo)
-        self.scan_input.clear()
 
     def _monitorar(self):
         status_mobile = self.mobile_usb_service.status_conexao().conectado

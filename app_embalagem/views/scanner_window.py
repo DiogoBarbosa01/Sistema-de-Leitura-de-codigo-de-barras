@@ -2,8 +2,6 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from app_embalagem.database.connection import get_session
-from app_embalagem.services.mobile_request_service import MobileRequestService
-from app_embalagem.services.mobile_usb_service import MobileUsbService
 from app_embalagem.services.scan_service import ScanService
 from app_embalagem.utils.sound import beep_scan
 from app_embalagem.utils.theme import APP_STYLESHEET
@@ -14,31 +12,19 @@ class ScannerWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.scan_service = ScanService()
-        self.mobile_usb_service = MobileUsbService()
-        self.mobile_request_service = MobileRequestService()
-        self.setWindowTitle("Scanner / Filtro de Código")
+        self.setWindowTitle("Busca de Caixa")
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
-
-        try:
-            self.mobile_request_service.iniciar()
-        except Exception as exc:
-            self.mobile_req_label.setText("🖥 host: 🔴 inválido")
-
-        self.monitor_timer = QTimer(self)
-        self.monitor_timer.timeout.connect(self._monitorar_entradas)
-        self.monitor_timer.start(1200)
 
     def _montar_ui(self):
         layout = QVBoxLayout()
 
-        self.mobile_status_label = QLabel("📱 celular: inválido")
-        layout.addWidget(self.mobile_status_label)
+        titulo = QLabel("Busca de Caixa")
+        titulo.setObjectName("tituloPagina")
+        layout.addWidget(titulo)
 
-        self.mobile_req_label = QLabel("🖥 host: inválido")
-        layout.addWidget(self.mobile_req_label)
-
-        subtitulo = QLabel("Digite, escaneie USB ou envie pelo celular para solicitar busca da caixa")
+        subtitulo = QLabel("Use esta aba para filtrar e localizar caixas por código")
+        subtitulo.setObjectName("subtitulo")
         layout.addWidget(subtitulo)
 
         form = QFormLayout()
@@ -54,10 +40,6 @@ class ScannerWindow(QWidget):
 
         self.setLayout(layout)
         QTimer.singleShot(50, self.scan_input.setFocus)
-
-    def closeEvent(self, event):
-        self.mobile_request_service.parar()
-        super().closeEvent(event)
 
     def _abrir_detalhes_caixa(self, caixa):
         dlg = CaixaDetalhesDialog(caixa, self)
@@ -84,41 +66,3 @@ class ScannerWindow(QWidget):
             QMessageBox.warning(self, "Validação", "Informe um código de barras para filtrar.")
             return
         self._processar_codigo(codigo, limpar_input=True)
-
-
-    def _confirmar_e_processar_codigo_celular(self, codigo: str):
-        resposta = QMessageBox.question(
-            self,
-            "Leitura de código recebida",
-            f"Leitura de código a ser realizada:\n\n{codigo}\n\nDeseja confirmar a busca desta caixa?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.Yes,
-        )
-        if resposta != QMessageBox.Yes:
-            return
-        self._processar_codigo(codigo)
-
-    def _monitorar_entradas(self):
-        self._atualizar_statuses()
-
-        codigo_request = self.mobile_request_service.ler_codigo()
-        if codigo_request:
-            self._confirmar_e_processar_codigo_celular(codigo_request)
-            return
-
-        codigo_usb = self.mobile_usb_service.ler_codigo_usb()
-        if codigo_usb:
-            self._processar_codigo(codigo_usb)
-
-    def _atualizar_statuses(self):
-        status = self.mobile_usb_service.status_conexao()
-        if status.conectado:
-            self.mobile_status_label.setText("📱 celular: 🟢 conectado")
-        else:
-            self.mobile_status_label.setText("📱 celular: 🔴 inválido")
-
-        req_status = self.mobile_request_service.status()
-        if req_status.ativo:
-            self.mobile_req_label.setText("🖥 host: 🟢 conectado")
-        else:
-            self.mobile_req_label.setText("🖥 host: 🔴 inválido")

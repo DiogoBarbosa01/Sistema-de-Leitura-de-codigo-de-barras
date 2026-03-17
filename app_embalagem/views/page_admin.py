@@ -1,5 +1,5 @@
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.caixa_service import CaixaService
@@ -60,13 +60,9 @@ class PageAdmin(QWidget):
         subtitulo.setObjectName("subtitulo")
         layout.addWidget(subtitulo)
 
-        self.scan_input = QLineEdit()
-        self.scan_input.setPlaceholderText("Leitura rápida sem abrir Scanner: escaneie ou digite um código CX-...")
-        self.scan_input.returnPressed.connect(self._processar_codigo_manual)
-        layout.addWidget(self.scan_input)
 
         botoes = QGridLayout()
-        self.scanner_btn = QPushButton("Scanner")
+        self.scanner_btn = QPushButton("Busca de Caixa")
         self.func_btn = QPushButton("Cadastro de Funcionário")
         self.caixa_btn = QPushButton("Cadastro de Caixa")
         self.codigos_btn = QPushButton("Códigos de Barras")
@@ -120,12 +116,6 @@ class PageAdmin(QWidget):
         finally:
             session.close()
 
-    def _processar_codigo_manual(self):
-        codigo = self.scan_input.text().strip()
-        if not codigo:
-            return
-        self._processar_codigo(codigo)
-        self.scan_input.clear()
 
     def _monitorar(self):
         self._atualizar_statuses()
