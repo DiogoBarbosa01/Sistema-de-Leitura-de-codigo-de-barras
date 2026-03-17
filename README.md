@@ -94,15 +94,15 @@ python -m app_embalagem.main(recomendo mais esse)
 - senha: `...`
 
 ## 6) Fluxo do scanner
-1. Escaneie `FUNC-xxxx` para selecionar funcionário ativo.
-2. Escaneie o código da caixa no padrão `CX-AADDMSSMMMMUUUUUU` para finalizar embalagem da caixa.
-3. O campo do scanner mantém foco automaticamente.
+1. Escaneie o codigo de barras no padrão `CX-AADDMSSMMMMUUUUUU` colado na caixa para filtrar suas informações de forma rápida.
+2. O Scanneamento funciona automaticamente quando o sistema liga, desde que tenha:
+3. Um celular conectado ou um scanner capaz de ler Code 128.
 
 ## 7) Leitura por celular
 A tela do scanner possui campo **Leitura por celular**.
-- Use qualquer app de leitura no celular para obter o valor do código.
-- Cole/digite no campo e clique em **Registrar leitura de celular**.
-- O sistema registra a origem como `celular` no histórico.
+- Use app de leituras com configuração de encaminhamento de URL no celular para obter o valor do código.
+- Tenho o ADB instalado e configurado
+- Esteja linkado com um USB e na mesma Rede Wifi.
 
 ## 8) Gerar executável com PyInstaller
 
@@ -120,9 +120,9 @@ O executável ficará em `dist/ControleEmbalagem`.
 
 ## 9) Perfis e telas iniciais separadas
 - O cadastro de usuário fica disponível na tela de login (botão **Cadastrar usuário**), com seleção de perfil `admin` ou `operador`.
-- **admin** abre a `PageAdmin` com acesso a cadastro de funcionário, cadastro de caixa, scanner, dashboard e histórico.
-- **operador** abre a `PageOperador` com acesso a:
-- scanner, dashboard e histórico
+- **admin** abre a `PageAdmin` com acesso a cadastro de funcionário, Cadastro de caixa, Busca De Caixa, Dashboard, Codigo de barras.
+- **operador** abre a `PageOperador` com acesso a: Cadastro de caixa, Busca De Caixa, Dashboard, Codigo de barras.
+- 
 
 
 ## 10) Regras da etiqueta de caixa
@@ -132,7 +132,7 @@ O executável ficará em `dist/ControleEmbalagem`.
   - `AA`: ano (2 dígitos)
   - `DD`: dia (2 dígitos)
   - `M`: mês em letra (`A` janeiro ... `L` dezembro)
-  - `SS`: 2 letras do funcionário
+  - `SS`: 2 primeiras letras do funcionário
   - `MMMM`: matrícula (4 dígitos, com zero à esquerda se necessário)
   - `UUUUUU`: identificador único interno sequencial
 - Após gerar, a tela mostra pré-visualização da etiqueta e botão **Imprimir**.
