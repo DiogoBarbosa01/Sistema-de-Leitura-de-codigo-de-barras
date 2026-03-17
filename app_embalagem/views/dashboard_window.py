@@ -24,14 +24,14 @@ class DashboardWindow(QWidget):
         self.caixa_service = CaixaService()
         self.mov_service = MovimentacaoService()
         self.setWindowTitle("Dashboard de Produção")
-        self.resize(900, 560)
+        self.resize(980, 620)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
         self._carregar()
 
     def _criar_card(self, titulo: str) -> tuple[QFrame, QLabel]:
         card = QFrame()
-        card.setObjectName("card")
+        card.setObjectName("kpiCard")
         layout = QVBoxLayout(card)
 
         titulo_label = QLabel(titulo)
@@ -49,6 +49,10 @@ class DashboardWindow(QWidget):
         titulo = QLabel("Painel de Produção")
         titulo.setObjectName("tituloDashboard")
         root.addWidget(titulo)
+
+        detalhe = QLabel("Visão geral de produtividade e movimentações recentes")
+        detalhe.setObjectName("textoAux")
+        root.addWidget(detalhe)
 
         cards_layout = QHBoxLayout()
         card_hoje, self.total_hoje_label = self._criar_card("Caixas embaladas hoje")
@@ -81,21 +85,6 @@ class DashboardWindow(QWidget):
         root.addWidget(self.mov_table)
 
         self.setLayout(root)
-        self.setStyleSheet(
-            """
-            QWidget { background-color: #121722; color: #e8eefc; font-size: 13px; }
-            #tituloDashboard { font-size: 24px; font-weight: 700; color: #8cc8ff; margin-bottom: 6px; }
-            #subtitulo { font-size: 16px; font-weight: 600; }
-            #textoAux { color: #b8c2d9; margin: 4px 0 8px 0; }
-            QFrame#card { background: #1b2333; border: 1px solid #33415f; border-radius: 12px; padding: 8px; }
-            #cardTitulo { color: #98a4bf; font-size: 12px; }
-            #cardValor { font-size: 28px; font-weight: 700; color: #f4f7ff; }
-            QPushButton { background: #2d4f87; border: none; border-radius: 8px; padding: 8px 12px; }
-            QPushButton:hover { background: #3d66ab; }
-            QTableWidget { background-color: #0f1520; gridline-color: #2a354e; border: 1px solid #2a354e; }
-            QHeaderView::section { background-color: #1d2738; padding: 6px; border: none; color: #dce6ff; }
-            """
-        )
 
     def _carregar(self):
         session = get_session()

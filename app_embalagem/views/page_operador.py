@@ -12,12 +12,20 @@ class PageOperador(QWidget):
         super().__init__()
         self.usuario = usuario
         self.setWindowTitle(f"Página Operador - {usuario.nome}")
+        self.resize(760, 420)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
 
     def _montar_ui(self):
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Área do operador"))
+
+        titulo = QLabel("Área do Operador")
+        titulo.setObjectName("tituloPagina")
+        layout.addWidget(titulo)
+
+        subtitulo = QLabel(f"Olá, {self.usuario.nome}. Selecione a ação desejada.")
+        subtitulo.setObjectName("subtitulo")
+        layout.addWidget(subtitulo)
 
         botoes = QGridLayout()
         self.scanner_btn = QPushButton("Scanner")

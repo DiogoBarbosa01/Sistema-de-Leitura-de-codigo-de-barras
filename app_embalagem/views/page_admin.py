@@ -19,6 +19,7 @@ class PageAdmin(QWidget):
         self.usuario = usuario
         self.caixa_service = CaixaService()
         self.setWindowTitle(f"Página Admin - {usuario.nome}")
+        self.resize(1100, 680)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
         self._atualizar_tabela_caixas()
@@ -31,6 +32,10 @@ class PageAdmin(QWidget):
         titulo = QLabel("Área de Administrador")
         titulo.setObjectName("tituloPagina")
         layout.addWidget(titulo)
+
+        subtitulo = QLabel(f"Bem-vindo, {self.usuario.nome}. Gerencie a operação em tempo real.")
+        subtitulo.setObjectName("subtitulo")
+        layout.addWidget(subtitulo)
 
         botoes = QGridLayout()
         self.scanner_btn = QPushButton("Scanner")
@@ -55,7 +60,10 @@ class PageAdmin(QWidget):
         botoes.addWidget(self.hist_btn, 2, 1)
 
         layout.addLayout(botoes)
-        layout.addWidget(QLabel("Cadastros de caixas (tempo real)"))
+
+        table_hint = QLabel("Cadastros de caixas (tempo real)")
+        table_hint.setObjectName("tableHint")
+        layout.addWidget(table_hint)
 
         self.caixas_table = QTableWidget(0, 6)
         self.caixas_table.setHorizontalHeaderLabels(["Código", "Nº Pedido", "Artigo", "Metros", "Status", "Criada em"])

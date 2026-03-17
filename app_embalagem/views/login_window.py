@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import (
+    QFrame,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -28,7 +29,18 @@ class LoginWindow(QWidget):
 
     def _montar_ui(self):
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Faça login para continuar"))
+
+        titulo = QLabel("Sistema de Embalagem")
+        titulo.setObjectName("tituloLogin")
+        layout.addWidget(titulo)
+
+        subtitulo = QLabel("Faça login para continuar")
+        subtitulo.setObjectName("loginHint")
+        layout.addWidget(subtitulo)
+
+        card = QFrame()
+        card.setObjectName("card")
+        card_layout = QVBoxLayout(card)
 
         form = QFormLayout()
         self.username_input = QLineEdit()
@@ -36,18 +48,21 @@ class LoginWindow(QWidget):
         self.senha_input.setEchoMode(QLineEdit.Password)
         form.addRow("Usuário:", self.username_input)
         form.addRow("Senha:", self.senha_input)
-        layout.addLayout(form)
+        card_layout.addLayout(form)
 
         botoes = QHBoxLayout()
         entrar_btn = QPushButton("Entrar")
         entrar_btn.clicked.connect(self._fazer_login)
 
         cadastro_btn = QPushButton("Cadastrar usuário")
+        cadastro_btn.setObjectName("secondaryButton")
         cadastro_btn.clicked.connect(self._abrir_cadastro_usuario)
 
         botoes.addWidget(entrar_btn)
         botoes.addWidget(cadastro_btn)
-        layout.addLayout(botoes)
+        card_layout.addLayout(botoes)
+
+        layout.addWidget(card)
         self.setLayout(layout)
 
     def _garantir_admin_padrao(self):

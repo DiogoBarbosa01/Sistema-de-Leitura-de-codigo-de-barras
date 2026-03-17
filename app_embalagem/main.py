@@ -12,7 +12,7 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName(APP_TITLE)
     window = LoginWindow()
-    window.resize(420, 220)
+    window.resize(520, 300)
     window.show()
     sys.exit(app.exec())
 
