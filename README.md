@@ -40,7 +40,7 @@ GRANT ALL PRIVILEGES ON DATABASE embalagem_db TO embalagem_user;
 ```
 (USE O SQL SHELL PARA CRIAR O DB, MUITO MAIS FÁCIL E PRÁTICO)
 
-##EXTRAS DO TOPICO 2
+## EXTRAS DO TOPICO 2
 -Dbeaver ou PgAdmin 4 para monitorar as tabelas em tempo real.(eu prefiro o dbeaver)
 -Lembre de criar a porta no sistema meu amigo, ele não tem bola de cristal para linkar automático. 
 -Caso esteja sendo seu inicio com o DataBase do sistema e quer mudar uma tabela e ta com preguiça de atualizar o DB devida a alta etapa pior que o site do GOV?
@@ -214,7 +214,7 @@ Exemplos de apps que podem ser usados no Android (com automação/atalho para sa
 ## 15) Configuração USB no PC (guia dedicado)
 - Veja o arquivo `README_USB_PC.md` para instruções completas de Windows/Linux/macOS e diagnóstico ADB.
 
- ##16) PIP INSTALL
+## 16) PIP INSTALL
  -Todos os PIP install necessários.
 -`pip install pyside`
 -`pip install sqlalchemy`
