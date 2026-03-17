@@ -1,6 +1,6 @@
 import re
 import unicodedata
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 
 from sqlalchemy import desc, func, select
 
@@ -83,8 +83,8 @@ class CaixaService:
         session.commit()
 
     def total_embaladas_hoje(self, session) -> int:
-        inicio = datetime.combine(date.today(), datetime.min.time())
-        fim = datetime.combine(date.today(), datetime.max.time())
+        inicio = datetime.combine(date.today(), time.min)
+        fim = datetime.combine(date.today(), time.max)
         stmt = select(func.count(Caixa.id)).where(Caixa.status == self.STATUS_EMBALADA, Caixa.data_criacao.between(inicio, fim))
         return session.scalar(stmt) or 0
 
@@ -97,5 +97,27 @@ class CaixaService:
             select(Movimentacao.funcionario_id, func.count(Movimentacao.id))
             .where(Movimentacao.acao == "finalizou_embalagem")
             .group_by(Movimentacao.funcionario_id)
+        )
+        return session.execute(stmt).all()
+
+    def total_cadastradas_no_dia(self, session, dia_ref: date) -> int:
+        inicio = datetime.combine(dia_ref, time.min)
+        fim = datetime.combine(dia_ref, time.max)
+        stmt = select(func.count(Caixa.id)).where(Caixa.data_criacao.between(inicio, fim))
+        return session.scalar(stmt) or 0
+
+    def total_cadastradas_hoje(self, session) -> int:
+        return self.total_cadastradas_no_dia(session, date.today())
+
+    def total_cadastradas_ultimo_dia(self, session) -> int:
+        return self.total_cadastradas_no_dia(session, date.today() - timedelta(days=1))
+
+    def operadores_online_por_cadastro(self, session, janela_minutos: int = 15):
+        limite = datetime.now() - timedelta(minutes=janela_minutos)
+        stmt = (
+            select(Caixa.nome_funcionario, func.count(Caixa.id))
+            .where(Caixa.data_criacao >= limite)
+            .group_by(Caixa.nome_funcionario)
+            .order_by(desc(func.count(Caixa.id)))
         )
         return session.execute(stmt).all()

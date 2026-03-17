@@ -10,7 +10,6 @@ from app_embalagem.utils.theme import APP_STYLESHEET
 from app_embalagem.views.caixa_detalhes_dialog import CaixaDetalhesDialog
 from app_embalagem.views.codigos_barras_window import CodigosBarrasWindow
 from app_embalagem.views.dashboard_window import DashboardWindow
-from app_embalagem.views.historico_window import HistoricoWindow
 from app_embalagem.views.scanner_window import ScannerWindow
 
 
@@ -59,18 +58,15 @@ class PageOperador(QWidget):
         botoes = QGridLayout()
         self.scanner_btn = QPushButton("Busca de Caixa")
         self.dash_btn = QPushButton("Dashboard")
-        self.hist_btn = QPushButton("Histórico")
         self.codigos_btn = QPushButton("Códigos de Barras")
 
         self.scanner_btn.clicked.connect(self.abrir_scanner)
         self.dash_btn.clicked.connect(self.abrir_dashboard)
-        self.hist_btn.clicked.connect(self.abrir_historico)
         self.codigos_btn.clicked.connect(self.abrir_codigos)
 
         botoes.addWidget(self.scanner_btn, 0, 0)
         botoes.addWidget(self.dash_btn, 0, 1)
-        botoes.addWidget(self.hist_btn, 1, 0)
-        botoes.addWidget(self.codigos_btn, 1, 1)
+        botoes.addWidget(self.codigos_btn, 1, 0)
 
         layout.addLayout(botoes)
         self.setLayout(layout)
@@ -115,9 +111,6 @@ class PageOperador(QWidget):
         self.w_dash = DashboardWindow()
         self.w_dash.show()
 
-    def abrir_historico(self):
-        self.w_hist = HistoricoWindow()
-        self.w_hist.show()
 
     def abrir_codigos(self):
         self.w_codigos = CodigosBarrasWindow()
