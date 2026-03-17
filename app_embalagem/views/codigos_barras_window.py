@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel, QPushButton, QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtWidgets import QLabel, QPushButton, QSplitter, QStyle, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 from sqlalchemy import select
 
 from app_embalagem.config import BARCODES_DIR
@@ -52,6 +52,20 @@ class CodigosBarrasWindow(QWidget):
         layout.addWidget(splitter)
         self.setLayout(layout)
 
+
+    @staticmethod
+    def _icone_padrao(style, nome_enum: str) -> QIcon:
+        # Compatibilidade PySide6: algumas builds expõem via QStyle.StandardPixmap, outras diretamente em QStyle
+        valor = None
+        std = getattr(QStyle, "StandardPixmap", None)
+        if std is not None:
+            valor = getattr(std, nome_enum, None)
+        if valor is None:
+            valor = getattr(QStyle, nome_enum, None)
+        if valor is None:
+            return QIcon()
+        return style.standardIcon(valor)
+
     def _organizar_arquivos_legados(self):
         base = Path(BARCODES_DIR)
         arquivos_soltos = list(base.glob("*.png"))
@@ -93,14 +107,14 @@ class CodigosBarrasWindow(QWidget):
             pasta_item = QTreeWidgetItem([pasta.name, "Pasta"])
             pasta_item.setData(0, Qt.UserRole, str(pasta))
             pasta_item.setData(1, Qt.UserRole, "folder")
-            pasta_item.setIcon(0, self.style().standardIcon(self.style().SP_DirIcon))
+            pasta_item.setIcon(0, self._icone_padrao(self.style(), "SP_DirIcon"))
 
             for arquivo in sorted(pasta.glob("*.png")):
                 total_arquivos += 1
                 file_item = QTreeWidgetItem([arquivo.name, "Arquivo PNG"])
                 file_item.setData(0, Qt.UserRole, str(arquivo))
                 file_item.setData(1, Qt.UserRole, "file")
-                file_item.setIcon(0, self.style().standardIcon(self.style().SP_FileIcon))
+                file_item.setIcon(0, self._icone_padrao(self.style(), "SP_FileIcon"))
                 pasta_item.addChild(file_item)
 
             self.tree.addTopLevelItem(pasta_item)
