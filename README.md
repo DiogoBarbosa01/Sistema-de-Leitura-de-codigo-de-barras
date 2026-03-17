@@ -190,3 +190,13 @@ Exemplos de apps que podem ser usados no Android (com automação/atalho para sa
 
 ## 15) Configuração USB no PC (guia dedicado)
 - Veja o arquivo `README_USB_PC.md` para instruções completas de Windows/Linux/macOS e diagnóstico ADB.
+
+- ##16) Todos os PIP necessários para instalação
+- pip install pyside6
+-pip install sqlalchemy
+-pip install psycopg2-binary
+-pip install python-barcode
+-pip install pillow
+-pip install pyinstaller
+
+Use eles caso necessite abrir o sistema em outros computadores para edição de codigo
