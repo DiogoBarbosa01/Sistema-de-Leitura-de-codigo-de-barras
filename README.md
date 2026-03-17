@@ -105,7 +105,7 @@ O executável ficará em `dist/ControleEmbalagem`.
 
 
 ## 10) Regras da etiqueta de caixa
-- Campos da caixa: **Nº do pedido** (4 dígitos), **Artigo** e **Metros** (metros de fita na caixa).
+- Campos da caixa: **Nº do pedido** (4 dígitos), **Artigo**, **Cor**, **Emendas** e **Metros** (metros de fita na caixa).
 - Ao clicar em **Gerar etiqueta**, o sistema já salva a caixa e gera o barcode em uma única ação.
 - O código da caixa segue o padrão: `CX-AADDMSSMMMMUUUUUU`
   - `AA`: ano (2 dígitos)
@@ -140,7 +140,7 @@ Opções aceitas:
 Fluxo no sistema:
 1. Chega solicitação do celular.
 2. O sistema exibe popup: **"Leitura de código a ser realizada"** com botões **Confirmar/Cancelar**.
-3. Ao confirmar, abre a Janela de dados da caixa.
+3. Ao confirmar, abre a Janela de dados da caixa (incluindo artigo, cor, emendas e nome completo do funcionário).
 
 Configuração sugerida no Binary Eye (IP do PC: `192.168.2.110`):
 - Ativar "Encaminhar digitalizações".

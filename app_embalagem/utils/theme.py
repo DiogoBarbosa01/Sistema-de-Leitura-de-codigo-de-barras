@@ -1,33 +1,82 @@
 APP_STYLESHEET = """
-QWidget { background-color: #121722; color: #e8eefc; font-size: 13px; }
-QLabel#tituloPagina { font-size: 22px; font-weight: 700; color: #8cc8ff; margin-bottom: 6px; }
-QLabel#subtitulo { font-size: 16px; font-weight: 600; }
-QLineEdit, QComboBox, QTableWidget {
-    background-color: #0f1520;
-    border: 1px solid #2a354e;
-    border-radius: 8px;
-    padding: 6px;
-    color: #ecf2ff;
+QWidget {
+    background-color: #0b1020;
+    color: #eef4ff;
+    font-size: 13px;
+    font-family: 'Segoe UI', 'Inter', Arial;
 }
-QPushButton {
-    background: #2d4f87;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 12px;
-    color: #f3f7ff;
+
+QLabel#tituloPagina {
+    font-size: 24px;
+    font-weight: 800;
+    color: #7dd3fc;
+    margin-bottom: 10px;
 }
-QPushButton:hover { background: #3d66ab; }
-QTableWidget { gridline-color: #2a354e; }
-QHeaderView::section {
-    background-color: #1d2738;
-    padding: 6px;
-    border: none;
-    color: #dce6ff;
+
+QLabel#subtitulo {
+    font-size: 15px;
+    font-weight: 600;
+    color: #c8d8ff;
 }
-QFrame#card {
-    background: #1b2333;
-    border: 1px solid #33415f;
-    border-radius: 12px;
+
+QLineEdit,
+QComboBox,
+QTableWidget,
+QListWidget {
+    background-color: #111a30;
+    border: 1px solid #2b3a64;
+    border-radius: 10px;
     padding: 8px;
+    color: #f7fbff;
+    selection-background-color: #2563eb;
+}
+
+QLineEdit:focus,
+QComboBox:focus,
+QTableWidget:focus,
+QListWidget:focus {
+    border: 1px solid #60a5fa;
+}
+
+QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #2563eb, stop:1 #1d4ed8);
+    border: none;
+    border-radius: 10px;
+    padding: 9px 14px;
+    color: #f8fbff;
+    font-weight: 600;
+}
+
+QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #3b82f6, stop:1 #2563eb);
+}
+
+QPushButton:disabled {
+    background: #334155;
+    color: #94a3b8;
+}
+
+QTableWidget {
+    gridline-color: #24304f;
+    alternate-background-color: #0f172a;
+}
+
+QHeaderView::section {
+    background-color: #18223d;
+    padding: 7px;
+    border: none;
+    color: #dbeafe;
+    font-weight: 600;
+}
+
+QFrame#card {
+    background: #131d34;
+    border: 1px solid #33466f;
+    border-radius: 14px;
+    padding: 10px;
+}
+
+QMessageBox {
+    background-color: #0f172a;
 }
 """

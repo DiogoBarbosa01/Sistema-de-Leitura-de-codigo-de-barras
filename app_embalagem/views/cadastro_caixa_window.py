@@ -44,11 +44,16 @@ class CadastroCaixaWindow(QWidget):
         self.numero_pedido_input.setMaxLength(4)
         self.numero_pedido_input.setPlaceholderText("0000")
         self.artigo_input = QLineEdit()
+        self.cor_input = QLineEdit()
+        self.emendas_input = QLineEdit()
+        self.emendas_input.setPlaceholderText("0")
         self.metros_input = QLineEdit()
         self.funcionario_combo = QComboBox()
 
         form.addRow("Nº do pedido:", self.numero_pedido_input)
         form.addRow("Artigo:", self.artigo_input)
+        form.addRow("Cor:", self.cor_input)
+        form.addRow("Emendas:", self.emendas_input)
         form.addRow("Metros:", self.metros_input)
         form.addRow("Funcionário:", self.funcionario_combo)
 
@@ -89,10 +94,19 @@ class CadastroCaixaWindow(QWidget):
     def _gerar_etiqueta(self):
         erro_pedido = validar_numero_pedido(self.numero_pedido_input.text())
         erro_artigo = validar_texto_obrigatorio(self.artigo_input.text(), "artigo")
+        erro_cor = validar_texto_obrigatorio(self.cor_input.text(), "cor")
         erro_metros = validar_metros(self.metros_input.text().strip())
 
-        if erro_pedido or erro_artigo or erro_metros:
-            QMessageBox.warning(self, "Validação", erro_pedido or erro_artigo or erro_metros)
+        try:
+            emendas = int((self.emendas_input.text() or "0").strip())
+            if emendas < 0:
+                raise ValueError
+            erro_emendas = None
+        except ValueError:
+            erro_emendas = "Emendas deve ser um número inteiro maior ou igual a 0."
+
+        if erro_pedido or erro_artigo or erro_cor or erro_emendas or erro_metros:
+            QMessageBox.warning(self, "Validação", erro_pedido or erro_artigo or erro_cor or erro_emendas or erro_metros)
             return
 
         funcionario = self.funcionario_combo.currentData()
@@ -102,10 +116,12 @@ class CadastroCaixaWindow(QWidget):
 
         session = get_session()
         try:
-            caixa, caminho = self.caixa_service.criar_caixa(
+            _caixa, caminho = self.caixa_service.criar_caixa(
                 session,
                 numero_pedido=self.numero_pedido_input.text().strip(),
                 artigo=self.artigo_input.text().strip(),
+                cor=self.cor_input.text().strip(),
+                emendas=emendas,
                 metros=float(self.metros_input.text().strip().replace(",", ".")),
                 nome_funcionario=funcionario["nome"],
                 matricula=funcionario["matricula"],
@@ -117,6 +133,8 @@ class CadastroCaixaWindow(QWidget):
             QMessageBox.information(self, "Sucesso", "Etiqueta gerada e caixa registrada com sucesso.")
             self.numero_pedido_input.clear()
             self.artigo_input.clear()
+            self.cor_input.clear()
+            self.emendas_input.clear()
             self.metros_input.clear()
         except Exception as exc:
             session.rollback()

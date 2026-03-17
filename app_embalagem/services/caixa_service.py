@@ -42,13 +42,26 @@ class CaixaService:
         codigo = f"CX-{ano}{dia}{mes_letra}{sigla2}{matricula4}{uid}"
         return codigo, sigla2, uid
 
-    def criar_caixa(self, session, numero_pedido: str, artigo: str, metros: float, nome_funcionario: str, matricula: str) -> tuple[Caixa, str]:
-        codigo, sigla, uid = self.gerar_proximo_codigo(session, nome_funcionario, matricula)
+    def criar_caixa(
+        self,
+        session,
+        numero_pedido: str,
+        artigo: str,
+        cor: str,
+        emendas: int,
+        metros: float,
+        nome_funcionario: str,
+        matricula: str,
+    ) -> tuple[Caixa, str]:
+        codigo, sigla, _uid = self.gerar_proximo_codigo(session, nome_funcionario, matricula)
         caixa = Caixa(
             codigo_caixa=codigo,
             arte=numero_pedido,
             artigo=artigo,
+            cor=cor,
+            emendas=emendas,
             metros=metros,
+            nome_funcionario=nome_funcionario,
             sigla_funcionario=sigla,
             status=self.STATUS_CRIADA,
         )
