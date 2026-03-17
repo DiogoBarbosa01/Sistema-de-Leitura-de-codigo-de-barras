@@ -1,12 +1,12 @@
 # Sistema de Controle de Embalagem (Desktop)
 
 Aplicativo desktop em **Python + PySide6** para:
-- cadastrar funcionários
-- cadastrar caixas
-- gerar código de barras Code128
-- ler códigos via scanner USB (como teclado)
-- registrar leituras também por celular (entrada manual do código lido no app mobile)
-- rastrear produtividade e histórico
+- cadastrar funcionários.
+- cadastrar caixas.
+- gerar código de barras Code 128 para melhor filtro e registro.
+- ler códigos via scanner USB (como teclado).
+- registrar leituras também por celular via Binare Eye(futuramente vamos criar um app de scam original).
+- rastrear produtividade e histórico.
 
 ## Estrutura
 
@@ -26,14 +26,32 @@ app_embalagem/
 ## 1) Pré-requisitos
 - Python 3.11+
 - PostgreSQL 13+
+- PySide 6
+- windows 10 +
+- Binare Eye
+- Força de Vontade
 
-## 2) Criar banco PostgreSQL
+## 2) Criar banco PostgreSQL (todos sabem ne)
 
 ```sql
 CREATE DATABASE app_embalagem;
 CREATE USER embalagem_user WITH PASSWORD '...';
 GRANT ALL PRIVILEGES ON DATABASE embalagem_db TO embalagem_user;
 ```
+(USE O SQL SHELL PARA CRIAR O DB, MUITO MAIS FÁCIL E PRÁTICO)
+
+##EXTRAS DO TOPICO 2
+-Dbeaver ou PgAdmin 4 para monitorar as tabelas em tempo real.(eu prefiro o dbeaver)
+-Lembre de criar a porta no sistema meu amigo, ele não tem bola de cristal para linkar automático. 
+-Caso esteja sendo seu inicio com o DataBase do sistema e quer mudar uma tabela e ta com preguiça de atualizar o DB devida a alta etapa pior que o site do GOV?
+
+No SQL SHELL
+`\c nome do db
+#nome do db:DROP SCHEMA public CASCADE;          
+#nome do db:CREATE SCHEMA public;`
+Voce apagou as tabelas antigas e recriou elas do zero agora atualizadas, **lembre sempre de fazer alterações na tabela dessa forma quando ainda não for o sistema original** que está no ar, rapido e prático.
+
+-caso faça isso e deseja que as tabelas sejam recriadas, só abrir seu app e elas criam novamente do zero.
 
 ## 3) Configurar ambiente
 
@@ -43,6 +61,7 @@ source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\activate   # Windows
 pip install -r app_embalagem/requirements.txt
 ```
+-Caso fique na duvida se a venv esta correta, ele aparece escrito (venv) mas se to for bobado e seu terminal não apareceu, so dar um `ls`
 
 ## 4) Configurar conexão
 Use variáveis de ambiente (opcional). Se não definir, usa defaults do `config.py`.
@@ -50,22 +69,22 @@ Use variáveis de ambiente (opcional). Se não definir, usa defaults do `config.
 ```bash
 export DB_HOST=localhost
 export DB_PORT=****
-export DB_NAME=embalagem_db
-export DB_USER=embalagem_user
-export DB_PASSWORD=embalagem123
+export DB_NAME=app_embalagem
+export DB_USER=user
+export DB_PASSWORD=...
 ```
 
 Ou defina `DATABASE_URL` diretamente:
 
 ```bash
-export DATABASE_URL='postgresql+psycopg2://embalagem_user:embalagem123@localhost:5432/embalagem_db'
+export DATABASE_URL='postgresql+psycopg2://embalagem_user:embalagem123@localhost:****/app_embalagem'
 ```
 
 ## 5) Inicializar banco e rodar app
 
 ```bash
 python -m app_embalagem.database.init_db
-python -m app_embalagem.main
+python -m app_embalagem.main(recomendo mais esse)
 ```
 
 ### Login padrão
@@ -117,13 +136,18 @@ O executável ficará em `dist/ControleEmbalagem`.
 - Após gerar, a tela mostra pré-visualização da etiqueta e botão **Imprimir**.
 
 ## 11) Leitura automática por celular USB (ADB)
-- A tela de scanner agora monitora celular conectado por USB usando **ADB**.
+- A tela de scanner agora monitora celular conectado por USB usando **ADB** (Android Debug Bridge)
+- Esse App ajuda o sistema fazer uma varredura no aparelho criando uma conexão Pc -> celular via depuração USB, ele também pode ser usado via WIFI se for bem configurado.
 - Quando um código novo é detectado via USB, o sistema processa automaticamente e abre uma janela com os dados da caixa.
+- Link da Pagina Oficial para quem quiser dar uma estudada e entender mais essa API(muito boa inclusive) https://developer.android.com/tools/adb?hl=pt-br
+ 
 - Pré-requisitos:
   1. `adb` instalado no PC
-  2. depuração USB habilitada no Android
-  3. celular autorizado no ADB (`adb devices`)
-  4. app do celular escrevendo o último código lido no arquivo `/sdcard/embalagem_scan_code.txt`
+  2. depuração USB habilitada no Android(Precisa do modo desenvolvedor do celular ativo para habilitar)
+  3. Ativa o adb no projeto via bash(`adb start server`).
+  4. Verificar se o celular está sendo reconhecido(`adb device`) no Bash
+  5. Se aparecer `unauthorized`, reconecte o cabo e aceite o aviso no celular.
+  6. app de escaneamento de codigo precisa ter funcionalidade de encaminhamento via URL e como modo de conexão POST/JSON ou GET Completo.
 - O monitor não bloqueia o sistema: se o ADB não estiver disponível, o scanner manual continua funcionando normalmente.
 
 
@@ -162,13 +186,12 @@ Observações:
 
 ## 12) Configurações USB obrigatórias no celular (Android)
 Para o celular ser reconhecido no sistema via USB/ADB:
-1. Ative **Opções do desenvolvedor** no Android.
+1. Ative **Opções do desenvolvedor** no Android.(clica 7x no numero de versão do celular)
 2. Ative **Depuração USB**.
-3. Ao conectar no PC, selecione modo USB **Transferência de arquivos (MTP)** (evite somente carregamento).
+3. Ao conectar no PC, selecione modo USB **Transferência de arquivos** (evite somente carregamento).
 4. Aceite o pop-up **Permitir depuração USB** no celular (marque “Sempre permitir”).
-5. No PC, valide com `adb devices` (deve aparecer como `device`).
 
-Se aparecer `unauthorized`, reconecte o cabo e aceite o aviso no celular.
+
 
 ## 13) Aplicativos compatíveis para leitura de código
 O sistema aceita qualquer app de scanner no celular que consiga entregar o texto lido para o arquivo:
@@ -177,7 +200,7 @@ O sistema aceita qualquer app de scanner no celular que consiga entregar o texto
 Exemplos de apps que podem ser usados no Android (com automação/atalho para salvar texto):
 - **Barcode Scanner** (ZXing)
 - **QR & Barcode Scanner** (Gamma Play)
-- **Binary Eye**
+- **Binary Eye**(acho o mais fácil)
 - **Scandit Keyboard Wedge** (cenário corporativo)
 
 > Observação: o app precisa exportar o valor lido para arquivo (ou integração equivalente), pois o monitor USB lê desse caminho via ADB.
@@ -191,7 +214,8 @@ Exemplos de apps que podem ser usados no Android (com automação/atalho para sa
 ## 15) Configuração USB no PC (guia dedicado)
 - Veja o arquivo `README_USB_PC.md` para instruções completas de Windows/Linux/macOS e diagnóstico ADB.
 
-- ##16) Todos os PIP necessários para instalação
+ ##16) PIP INSTALL
+ -Todos os PIP install necessários.
 -`pip install pyside`
 -`pip install sqlalchemy`
 -`pip install psycopg2-binary`
