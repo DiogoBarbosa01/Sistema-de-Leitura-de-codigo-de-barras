@@ -2,6 +2,7 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from app_embalagem.database.connection import get_session
+from app_embalagem.services.mobile_request_service import MobileRequestService
 from app_embalagem.services.mobile_usb_service import MobileUsbService
 from app_embalagem.services.scan_service import ScanService
 from app_embalagem.utils.theme import APP_STYLESHEET
@@ -13,13 +14,19 @@ class ScannerWindow(QWidget):
         super().__init__()
         self.scan_service = ScanService()
         self.mobile_usb_service = MobileUsbService()
+        self.mobile_request_service = MobileRequestService()
         self.setWindowTitle("Scanner / Filtro de Código")
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
 
-        self.usb_mobile_timer = QTimer(self)
-        self.usb_mobile_timer.timeout.connect(self._verificar_scan_usb_celular)
-        self.usb_mobile_timer.start(1500)
+        try:
+            self.mobile_request_service.iniciar()
+        except Exception as exc:
+            self.mobile_req_label.setText(f"Requisição via celular: erro ao iniciar ({exc})")
+
+        self.monitor_timer = QTimer(self)
+        self.monitor_timer.timeout.connect(self._monitorar_entradas)
+        self.monitor_timer.start(1200)
 
     def _montar_ui(self):
         layout = QVBoxLayout()
@@ -27,7 +34,10 @@ class ScannerWindow(QWidget):
         self.mobile_status_label = QLabel("Status ADB: verificando...")
         layout.addWidget(self.mobile_status_label)
 
-        subtitulo = QLabel("Digite ou escaneie o código da caixa para abrir a Janela de dados automaticamente")
+        self.mobile_req_label = QLabel("Requisição via celular: inicializando...")
+        layout.addWidget(self.mobile_req_label)
+
+        subtitulo = QLabel("Digite, escaneie USB ou envie pelo celular para abrir a Janela de dados")
         layout.addWidget(subtitulo)
 
         form = QFormLayout()
@@ -43,6 +53,10 @@ class ScannerWindow(QWidget):
 
         self.setLayout(layout)
         QTimer.singleShot(50, self.scan_input.setFocus)
+
+    def closeEvent(self, event):
+        self.mobile_request_service.parar()
+        super().closeEvent(event)
 
     def _abrir_detalhes_caixa(self, caixa):
         dlg = CaixaDetalhesDialog(caixa, self)
@@ -69,15 +83,31 @@ class ScannerWindow(QWidget):
             return
         self._processar_codigo(codigo, limpar_input=True)
 
-    def _verificar_scan_usb_celular(self):
+    def _monitorar_entradas(self):
+        self._atualizar_statuses()
+
+        codigo_request = self.mobile_request_service.ler_codigo()
+        if codigo_request:
+            self._processar_codigo(codigo_request)
+            return
+
+        codigo_usb = self.mobile_usb_service.ler_codigo_usb()
+        if codigo_usb:
+            self._processar_codigo(codigo_usb)
+
+    def _atualizar_statuses(self):
         status = self.mobile_usb_service.status_conexao()
         if status.conectado:
             self.mobile_status_label.setText(f"Status ADB: <b style='color:#52d66a'>Conectado</b> - {status.mensagem}")
         else:
             self.mobile_status_label.setText(f"Status ADB: <b style='color:#ff5b5b'>Inválido</b> - {status.mensagem}")
 
-        codigo = self.mobile_usb_service.ler_codigo_usb()
-        if not codigo:
-            return
-
-        self._processar_codigo(codigo)
+        req_status = self.mobile_request_service.status()
+        if req_status.ativo:
+            self.mobile_req_label.setText(
+                f"Requisição via celular: <b style='color:#52d66a'>Ativa</b> - {req_status.mensagem}"
+            )
+        else:
+            self.mobile_req_label.setText(
+                f"Requisição via celular: <b style='color:#ff5b5b'>Inativa</b> - {req_status.mensagem}"
+            )

@@ -126,6 +126,15 @@ O executável ficará em `dist/ControleEmbalagem`.
   4. app do celular escrevendo o último código lido no arquivo `/sdcard/embalagem_scan_code.txt`
 - O monitor não bloqueia o sistema: se o ADB não estiver disponível, o scanner manual continua funcionando normalmente.
 
+
+### 11.1) Envio de solicitação de busca pelo celular (sem app específico)
+Além do modo ADB, o Scanner abre um endpoint HTTP local para receber códigos do celular em tempo real:
+- `GET http://IP_DO_PC:8765/scan?code=CX-...`
+- `POST http://IP_DO_PC:8765/scan` com JSON `{"code":"CX-..."}`
+
+Quando a requisição chega, o sistema abre automaticamente a Janela de dados da caixa.
+Dica: configure seu app de scanner no celular para fazer requisição HTTP após cada leitura.
+
 ## 12) Configurações USB obrigatórias no celular (Android)
 Para o celular ser reconhecido no sistema via USB/ADB:
 1. Ative **Opções do desenvolvedor** no Android.
