@@ -127,13 +127,26 @@ O executável ficará em `dist/ControleEmbalagem`.
 - O monitor não bloqueia o sistema: se o ADB não estiver disponível, o scanner manual continua funcionando normalmente.
 
 
-### 11.1) Envio de solicitação de busca pelo celular (sem app específico)
-Além do modo ADB, o Scanner abre um endpoint HTTP local para receber códigos do celular em tempo real:
+### 11.1) Envio de solicitação de busca pelo celular (Binary Eye e similares)
+Além do modo ADB, o Scanner abre um endpoint HTTP local para receber códigos do celular em tempo real.
+
+> Sim, a URL pode (e deve) ser o **IP do PC** na rede local.
+
+Opções aceitas:
 - `GET http://IP_DO_PC:8765/scan?code=CX-...`
 - `POST http://IP_DO_PC:8765/scan` com JSON `{"code":"CX-..."}`
+- `POST/GET` também aceita campos alternativos: `codigo`, `text`, `data`, `scan`, `value`.
 
-Quando a requisição chega, o sistema abre automaticamente a Janela de dados da caixa.
-Dica: configure seu app de scanner no celular para fazer requisição HTTP após cada leitura.
+Fluxo no sistema:
+1. Chega solicitação do celular.
+2. O sistema exibe popup: **"Leitura de código a ser realizada"** com botões **Confirmar/Cancelar**.
+3. Ao confirmar, abre a Janela de dados da caixa.
+
+Configuração sugerida no Binary Eye:
+- Ativar "Encaminhar digitalizações".
+- Tipo de solicitação: `POST application/json`.
+- URL de encaminhamento: `http://IP_DO_PC:8765/scan`.
+- Corpo JSON: `{"code":"{CODE}"}` (ou equivalente do app para texto escaneado).
 
 ## 12) Configurações USB obrigatórias no celular (Android)
 Para o celular ser reconhecido no sistema via USB/ADB:

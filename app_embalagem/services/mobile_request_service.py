@@ -4,7 +4,7 @@ import threading
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from queue import Empty, Queue
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 
 @dataclass
@@ -28,6 +28,48 @@ class MobileRequestService:
         queue_ref = self._queue
 
         class Handler(BaseHTTPRequestHandler):
+            @staticmethod
+            def _normalizar_codigo(valor: str | None) -> str:
+                return (valor or "").strip().strip('"').upper()
+
+            @staticmethod
+            def _extrair_codigo_get(path: str, query: str) -> str:
+                if path.startswith("/scan/"):
+                    return Handler._normalizar_codigo(unquote(path.split("/scan/", 1)[1]))
+
+                params = parse_qs(query)
+                for chave in ("code", "codigo", "text", "data", "scan", "value"):
+                    if chave in params and params[chave]:
+                        return Handler._normalizar_codigo(params[chave][0])
+                return ""
+
+            @staticmethod
+            def _extrair_codigo_post(body: bytes, content_type: str) -> str:
+                bruto = body.decode("utf-8", errors="ignore").strip()
+                if not bruto:
+                    return ""
+
+                if "application/json" in content_type:
+                    try:
+                        payload = json.loads(bruto)
+                    except Exception:
+                        return ""
+                    if isinstance(payload, str):
+                        return Handler._normalizar_codigo(payload)
+                    for chave in ("code", "codigo", "text", "data", "scan", "value"):
+                        if chave in payload:
+                            return Handler._normalizar_codigo(str(payload[chave]))
+                    return ""
+
+                if "application/x-www-form-urlencoded" in content_type:
+                    params = parse_qs(bruto)
+                    for chave in ("code", "codigo", "text", "data", "scan", "value"):
+                        if chave in params and params[chave]:
+                            return Handler._normalizar_codigo(params[chave][0])
+                    return ""
+
+                return Handler._normalizar_codigo(bruto)
+
             def _responder(self, status: int, payload: dict):
                 body = json.dumps(payload).encode("utf-8")
                 self.send_response(status)
@@ -36,40 +78,42 @@ class MobileRequestService:
                 self.end_headers()
                 self.wfile.write(body)
 
+            def _rota_valida(self, parsed) -> bool:
+                return parsed.path == "/scan" or parsed.path.startswith("/scan/")
+
             def do_GET(self):
                 parsed = urlparse(self.path)
-                if parsed.path != "/scan":
+                if not self._rota_valida(parsed):
                     self._responder(404, {"ok": False, "mensagem": "Rota inválida"})
                     return
-                params = parse_qs(parsed.query)
-                codigo = (params.get("code") or [""])[0].strip().upper()
+
+                codigo = self._extrair_codigo_get(parsed.path, parsed.query)
                 if not codigo:
-                    self._responder(400, {"ok": False, "mensagem": "Parâmetro 'code' é obrigatório"})
+                    self._responder(400, {"ok": False, "mensagem": "Informe o código no parâmetro code (ou equivalente)."})
                     return
+
                 queue_ref.put(codigo)
-                self._responder(200, {"ok": True, "mensagem": "Código recebido"})
+                self._responder(200, {"ok": True, "mensagem": "Código recebido", "code": codigo})
 
             def do_POST(self):
                 parsed = urlparse(self.path)
-                if parsed.path != "/scan":
+                if not self._rota_valida(parsed):
                     self._responder(404, {"ok": False, "mensagem": "Rota inválida"})
                     return
 
                 content_length = int(self.headers.get("Content-Length", "0") or "0")
-                raw = self.rfile.read(content_length) if content_length else b"{}"
-                try:
-                    payload = json.loads(raw.decode("utf-8"))
-                except Exception:
-                    self._responder(400, {"ok": False, "mensagem": "JSON inválido"})
-                    return
+                raw = self.rfile.read(content_length) if content_length else b""
+                codigo = self._extrair_codigo_post(raw, self.headers.get("Content-Type", "").lower())
 
-                codigo = str(payload.get("code", "")).strip().upper()
+                if not codigo and parsed.path.startswith("/scan/"):
+                    codigo = self._normalizar_codigo(unquote(parsed.path.split("/scan/", 1)[1]))
+
                 if not codigo:
-                    self._responder(400, {"ok": False, "mensagem": "Campo 'code' é obrigatório"})
+                    self._responder(400, {"ok": False, "mensagem": "Campo code/codigo/text/data não encontrado."})
                     return
 
                 queue_ref.put(codigo)
-                self._responder(200, {"ok": True, "mensagem": "Código recebido"})
+                self._responder(200, {"ok": True, "mensagem": "Código recebido", "code": codigo})
 
             def log_message(self, _format, *_args):
                 return
@@ -97,10 +141,7 @@ class MobileRequestService:
             return MobileRequestStatus(False, "Servidor de requisição móvel inativo")
 
         ip = self._obter_ip_local()
-        return MobileRequestStatus(
-            True,
-            f"Aguardando celular em http://{ip}:{self.port}/scan?code=CX-...",
-        )
+        return MobileRequestStatus(True, f"Aguardando celular em http://{ip}:{self.port}/scan?code=CX-...")
 
     @staticmethod
     def _obter_ip_local() -> str:

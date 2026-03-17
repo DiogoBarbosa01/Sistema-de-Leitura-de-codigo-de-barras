@@ -37,7 +37,7 @@ class ScannerWindow(QWidget):
         self.mobile_req_label = QLabel("Requisição via celular: inicializando...")
         layout.addWidget(self.mobile_req_label)
 
-        subtitulo = QLabel("Digite, escaneie USB ou envie pelo celular para abrir a Janela de dados")
+        subtitulo = QLabel("Digite, escaneie USB ou envie pelo celular para solicitar busca da caixa")
         layout.addWidget(subtitulo)
 
         form = QFormLayout()
@@ -83,12 +83,25 @@ class ScannerWindow(QWidget):
             return
         self._processar_codigo(codigo, limpar_input=True)
 
+
+    def _confirmar_e_processar_codigo_celular(self, codigo: str):
+        resposta = QMessageBox.question(
+            self,
+            "Leitura de código recebida",
+            f"Leitura de código a ser realizada:\n\n{codigo}\n\nDeseja confirmar a busca desta caixa?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes,
+        )
+        if resposta != QMessageBox.Yes:
+            return
+        self._processar_codigo(codigo)
+
     def _monitorar_entradas(self):
         self._atualizar_statuses()
 
         codigo_request = self.mobile_request_service.ler_codigo()
         if codigo_request:
-            self._processar_codigo(codigo_request)
+            self._confirmar_e_processar_codigo_celular(codigo_request)
             return
 
         codigo_usb = self.mobile_usb_service.ler_codigo_usb()
