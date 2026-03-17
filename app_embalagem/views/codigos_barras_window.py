@@ -1,8 +1,22 @@
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QPixmap
-from PySide6.QtWidgets import QLabel, QPushButton, QSplitter, QStyle, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+from PySide6.QtGui import QIcon, QPainter, QPixmap
+from PySide6.QtPrintSupport import QPrintDialog, QPrinter
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QSplitter,
+    QStyle,
+    QVBoxLayout,
+    QWidget,
+)
 from sqlalchemy import select
 
 from app_embalagem.config import BARCODES_DIR
@@ -14,8 +28,10 @@ from app_embalagem.utils.theme import APP_STYLESHEET
 class CodigosBarrasWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.pasta_atual: Path | None = None
+        self.arquivos_da_pasta: list[Path] = []
         self.setWindowTitle("Códigos de Barras")
-        self.resize(980, 560)
+        self.resize(1180, 650)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
         self._carregar_explorador()
@@ -26,36 +42,79 @@ class CodigosBarrasWindow(QWidget):
         titulo.setObjectName("tituloPagina")
         layout.addWidget(titulo)
 
-        self.status_label = QLabel("Explorador de arquivos das etiquetas")
+        self.status_label = QLabel("Explorador de etiquetas")
         self.status_label.setObjectName("subtitulo")
         layout.addWidget(self.status_label)
 
+        filtro_linha = QHBoxLayout()
+        self.filtro_input = QLineEdit()
+        self.filtro_input.setPlaceholderText("Filtrar por nº do pedido (nome da pasta)")
+        self.filtro_input.textChanged.connect(self._carregar_explorador)
         atualizar_btn = QPushButton("Atualizar")
         atualizar_btn.clicked.connect(self._carregar_explorador)
-        layout.addWidget(atualizar_btn)
+        filtro_linha.addWidget(self.filtro_input)
+        filtro_linha.addWidget(atualizar_btn)
+        layout.addLayout(filtro_linha)
 
         splitter = QSplitter()
 
-        self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["Nome", "Tipo"])
-        self.tree.itemSelectionChanged.connect(self._mostrar_preview_selecionado)
+        left_panel = QWidget()
+        left_layout = QVBoxLayout(left_panel)
 
-        self.preview_label = QLabel("Selecione uma etiqueta (.png) para visualizar.")
+        left_layout.addWidget(QLabel("Pastas (horizontal)"))
+        self.pastas_list = QListWidget()
+        self.pastas_list.setViewMode(QListWidget.IconMode)
+        self.pastas_list.setFlow(QListWidget.LeftToRight)
+        self.pastas_list.setWrapping(True)
+        self.pastas_list.setResizeMode(QListWidget.Adjust)
+        self.pastas_list.setIconSize(self._icone_padrao(self.style(), "SP_DirIcon").actualSize(self.pastas_list.iconSize()))
+        self.pastas_list.currentItemChanged.connect(self._selecionar_pasta)
+        left_layout.addWidget(self.pastas_list)
+
+        left_layout.addWidget(QLabel("Arquivos da pasta"))
+        self.arquivos_list = QListWidget()
+        self.arquivos_list.currentItemChanged.connect(self._mostrar_imagem_unica)
+        left_layout.addWidget(self.arquivos_list)
+
+        right_panel = QWidget()
+        right_layout = QVBoxLayout(right_panel)
+
+        self.preview_label = QLabel("Selecione uma pasta para habilitar ações.")
         self.preview_label.setAlignment(Qt.AlignCenter)
-        self.preview_label.setObjectName("card")
-        self.preview_label.setMinimumHeight(340)
+        self.preview_label.setMinimumHeight(300)
+        right_layout.addWidget(self.preview_label)
 
-        splitter.addWidget(self.tree)
-        splitter.addWidget(self.preview_label)
-        splitter.setSizes([420, 560])
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.hide()
+
+        self.scroll_content = QWidget()
+        self.scroll_layout = QVBoxLayout(self.scroll_content)
+        self.scroll_layout.setAlignment(Qt.AlignTop)
+        self.scroll_area.setWidget(self.scroll_content)
+        right_layout.addWidget(self.scroll_area)
+
+        self.acoes_layout = QHBoxLayout()
+        self.abrir_tudo_btn = QPushButton("Abrir tudo")
+        self.imprimir_btn = QPushButton("Imprimir")
+        self.abrir_tudo_btn.clicked.connect(self._abrir_tudo)
+        self.imprimir_btn.clicked.connect(self._imprimir_todos)
+        self.abrir_tudo_btn.setEnabled(False)
+        self.imprimir_btn.setEnabled(False)
+        self.acoes_layout.addWidget(self.abrir_tudo_btn)
+        self.acoes_layout.addWidget(self.imprimir_btn)
+        self.acoes_layout.addStretch()
+        right_layout.addLayout(self.acoes_layout)
+
+        splitter.addWidget(left_panel)
+        splitter.addWidget(right_panel)
+        splitter.setSizes([480, 700])
 
         layout.addWidget(splitter)
         self.setLayout(layout)
 
-
     @staticmethod
     def _icone_padrao(style, nome_enum: str) -> QIcon:
-        # Compatibilidade PySide6: algumas builds expõem via QStyle.StandardPixmap, outras diretamente em QStyle
         valor = None
         std = getattr(QStyle, "StandardPixmap", None)
         if std is not None:
@@ -88,56 +147,151 @@ class CodigosBarrasWindow(QWidget):
 
     def _carregar_explorador(self):
         self._organizar_arquivos_legados()
-        self.tree.clear()
+        self.pastas_list.clear()
+        self.arquivos_list.clear()
+        self.pasta_atual = None
+        self.arquivos_da_pasta = []
         self.preview_label.setPixmap(QPixmap())
-        self.preview_label.setText("Selecione uma etiqueta (.png) para visualizar.")
+        self.preview_label.setText("Selecione uma pasta para habilitar ações.")
+        self.scroll_area.hide()
+        self.abrir_tudo_btn.setEnabled(False)
+        self.imprimir_btn.setEnabled(False)
 
         base = Path(BARCODES_DIR)
         if not base.exists():
             self.status_label.setText("Pasta de códigos não encontrada.")
             return
 
+        filtro = self.filtro_input.text().strip().lower()
         pastas = sorted([p for p in base.iterdir() if p.is_dir()])
+        if filtro:
+            pastas = [p for p in pastas if filtro in p.name.lower()]
+
         if not pastas:
-            self.status_label.setText("Nenhuma pasta encontrada. Gere uma etiqueta para popular o explorador.")
+            self.status_label.setText("Nenhuma pasta encontrada para esse filtro.")
             return
 
+        pasta_icon = self._icone_padrao(self.style(), "SP_DirIcon")
         total_arquivos = 0
         for pasta in pastas:
-            pasta_item = QTreeWidgetItem([pasta.name, "Pasta"])
-            pasta_item.setData(0, Qt.UserRole, str(pasta))
-            pasta_item.setData(1, Qt.UserRole, "folder")
-            pasta_item.setIcon(0, self._icone_padrao(self.style(), "SP_DirIcon"))
-
-            for arquivo in sorted(pasta.glob("*.png")):
-                total_arquivos += 1
-                file_item = QTreeWidgetItem([arquivo.name, "Arquivo PNG"])
-                file_item.setData(0, Qt.UserRole, str(arquivo))
-                file_item.setData(1, Qt.UserRole, "file")
-                file_item.setIcon(0, self._icone_padrao(self.style(), "SP_FileIcon"))
-                pasta_item.addChild(file_item)
-
-            self.tree.addTopLevelItem(pasta_item)
-            pasta_item.setExpanded(True)
+            qtd_png = len(list(pasta.glob("*.png")))
+            total_arquivos += qtd_png
+            item = QListWidgetItem(f"{pasta.name}\n({qtd_png})")
+            item.setData(Qt.UserRole, str(pasta))
+            item.setIcon(pasta_icon)
+            self.pastas_list.addItem(item)
 
         self.status_label.setText(f"{len(pastas)} pasta(s) e {total_arquivos} arquivo(s) carregados.")
+        self.pastas_list.setCurrentRow(0)
 
-    def _mostrar_preview_selecionado(self):
-        itens = self.tree.selectedItems()
-        if not itens:
+    def _selecionar_pasta(self, item_atual, _item_antigo):
+        self.arquivos_list.clear()
+        self.preview_label.setPixmap(QPixmap())
+        self.preview_label.setText("Selecione um arquivo para pré-visualizar ou clique em 'Abrir tudo'.")
+        self.scroll_area.hide()
+
+        if not item_atual:
+            self.pasta_atual = None
+            self.arquivos_da_pasta = []
+            self.abrir_tudo_btn.setEnabled(False)
+            self.imprimir_btn.setEnabled(False)
             return
 
-        item = itens[0]
-        if item.data(1, Qt.UserRole) != "file":
+        self.pasta_atual = Path(item_atual.data(Qt.UserRole))
+        self.arquivos_da_pasta = sorted(self.pasta_atual.glob("*.png"))
+
+        file_icon = self._icone_padrao(self.style(), "SP_FileIcon")
+        for arquivo in self.arquivos_da_pasta:
+            item = QListWidgetItem(arquivo.name)
+            item.setData(Qt.UserRole, str(arquivo))
+            item.setIcon(file_icon)
+            self.arquivos_list.addItem(item)
+
+        possui_arquivos = len(self.arquivos_da_pasta) > 0
+        self.abrir_tudo_btn.setEnabled(possui_arquivos)
+        self.imprimir_btn.setEnabled(possui_arquivos)
+
+        if possui_arquivos:
+            self.arquivos_list.setCurrentRow(0)
+
+    def _mostrar_imagem_unica(self, item_atual, _item_antigo):
+        self.scroll_area.hide()
+        self.preview_label.show()
+
+        if not item_atual:
             self.preview_label.setPixmap(QPixmap())
-            self.preview_label.setText("Selecione um arquivo PNG para visualizar.")
+            self.preview_label.setText("Selecione um arquivo para pré-visualizar.")
             return
 
-        caminho = item.data(0, Qt.UserRole)
-        pixmap = QPixmap(caminho)
+        pixmap = QPixmap(item_atual.data(Qt.UserRole))
         if pixmap.isNull():
             self.preview_label.setPixmap(QPixmap())
             self.preview_label.setText("Não foi possível carregar a imagem selecionada.")
             return
 
-        self.preview_label.setPixmap(pixmap.scaled(560, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.preview_label.setPixmap(pixmap.scaled(620, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
+    def _limpar_scroll_preview(self):
+        while self.scroll_layout.count():
+            item = self.scroll_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+    def _abrir_tudo(self):
+        if not self.arquivos_da_pasta:
+            return
+
+        self._limpar_scroll_preview()
+        for arquivo in self.arquivos_da_pasta:
+            titulo = QLabel(arquivo.name)
+            titulo.setObjectName("subtitulo")
+            self.scroll_layout.addWidget(titulo)
+
+            img = QLabel()
+            img.setAlignment(Qt.AlignCenter)
+            pix = QPixmap(str(arquivo))
+            if pix.isNull():
+                img.setText(f"Falha ao carregar: {arquivo.name}")
+            else:
+                img.setPixmap(pix.scaled(620, 220, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.scroll_layout.addWidget(img)
+
+        self.preview_label.hide()
+        self.scroll_area.show()
+
+    def _imprimir_todos(self):
+        if not self.arquivos_da_pasta:
+            QMessageBox.warning(self, "Impressão", "Selecione uma pasta com etiquetas para imprimir.")
+            return
+
+        printer = QPrinter(QPrinter.HighResolution)
+        printer.setDocName(f"Etiquetas_{self.pasta_atual.name if self.pasta_atual else 'lote'}")
+
+        dialog = QPrintDialog(printer, self)
+        if dialog.exec() != QPrintDialog.Accepted:
+            return
+
+        painter = QPainter()
+        if not painter.begin(printer):
+            QMessageBox.critical(self, "Impressão", "Não foi possível iniciar a impressão.")
+            return
+
+        try:
+            for idx, arquivo in enumerate(self.arquivos_da_pasta):
+                pix = QPixmap(str(arquivo))
+                if pix.isNull():
+                    continue
+
+                rect = painter.viewport()
+                escala = pix.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                x = (rect.width() - escala.width()) // 2
+                y = (rect.height() - escala.height()) // 2
+                painter.drawPixmap(x, y, escala)
+
+                if idx < len(self.arquivos_da_pasta) - 1:
+                    printer.newPage()
+        finally:
+            painter.end()
+
+        QMessageBox.information(self, "Impressão", "Impressão em lote enviada (1 etiqueta por página).")
