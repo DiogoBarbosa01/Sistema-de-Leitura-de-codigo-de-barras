@@ -142,11 +142,23 @@ Fluxo no sistema:
 2. O sistema exibe popup: **"Leitura de código a ser realizada"** com botões **Confirmar/Cancelar**.
 3. Ao confirmar, abre a Janela de dados da caixa.
 
-Configuração sugerida no Binary Eye:
+Configuração sugerida no Binary Eye (IP do PC: `192.168.2.110`):
 - Ativar "Encaminhar digitalizações".
-- Tipo de solicitação: `POST application/json`.
-- URL de encaminhamento: `http://IP_DO_PC:8765/scan`.
-- Corpo JSON: `{"code":"{CODE}"}` (ou equivalente do app para texto escaneado).
+
+**Se o tipo for `POST application/json`:**
+- URL de encaminhamento: `http://192.168.2.110:8765/scan`
+- Body JSON: `{"code":"{CODE}"}`
+
+**Se o tipo for `POST application/x-www-form-urlencoded`:**
+- URL de encaminhamento: `http://192.168.2.110:8765/scan`
+- Body (form): `code={CODE}`
+
+**Se o tipo for `GET`:**
+- URL de encaminhamento: `http://192.168.2.110:8765/scan?code={CODE}`
+
+Observações:
+- `{CODE}` representa o texto lido pelo scanner (o nome do placeholder pode variar no app).
+- Deixe celular e PC na mesma rede local.
 
 ## 12) Configurações USB obrigatórias no celular (Android)
 Para o celular ser reconhecido no sistema via USB/ADB:
