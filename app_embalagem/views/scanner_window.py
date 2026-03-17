@@ -1,13 +1,5 @@
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import (
-    QFormLayout,
-    QLabel,
-    QLineEdit,
-    QMessageBox,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.mobile_usb_service import MobileUsbService
@@ -21,8 +13,7 @@ class ScannerWindow(QWidget):
         super().__init__()
         self.scan_service = ScanService()
         self.mobile_usb_service = MobileUsbService()
-        self.funcionario_atual = None
-        self.setWindowTitle("Scanner USB / Celular")
+        self.setWindowTitle("Scanner / Filtro de Código")
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
 
@@ -32,27 +23,23 @@ class ScannerWindow(QWidget):
 
     def _montar_ui(self):
         layout = QVBoxLayout()
-        self.status_label = QLabel("Funcionário atual: nenhum")
-        layout.addWidget(self.status_label)
 
-        self.mobile_status_label = QLabel("Monitor USB celular: verificando...")
+        self.mobile_status_label = QLabel("Status ADB: verificando...")
         layout.addWidget(self.mobile_status_label)
+
+        subtitulo = QLabel("Digite ou escaneie o código da caixa para abrir a Janela de dados automaticamente")
+        layout.addWidget(subtitulo)
 
         form = QFormLayout()
         self.scan_input = QLineEdit()
-        self.scan_input.setPlaceholderText("Escaneie aqui com scanner USB")
-        self.scan_input.returnPressed.connect(self._processar_usb)
-
-        self.mobile_input = QLineEdit()
-        self.mobile_input.setPlaceholderText("Cole ou digite o código lido pelo celular")
-
-        form.addRow("Scanner USB:", self.scan_input)
-        form.addRow("Leitura por celular:", self.mobile_input)
+        self.scan_input.setPlaceholderText("Ex.: CX-2616CNI0001000002")
+        self.scan_input.returnPressed.connect(self._processar_filtro_manual)
+        form.addRow("Filtro por código:", self.scan_input)
         layout.addLayout(form)
 
-        self.mobile_btn = QPushButton("Registrar leitura de celular")
-        self.mobile_btn.clicked.connect(self._processar_celular)
-        layout.addWidget(self.mobile_btn)
+        self.buscar_btn = QPushButton("Buscar caixa")
+        self.buscar_btn.clicked.connect(self._processar_filtro_manual)
+        layout.addWidget(self.buscar_btn)
 
         self.setLayout(layout)
         QTimer.singleShot(50, self.scan_input.setFocus)
@@ -61,61 +48,36 @@ class ScannerWindow(QWidget):
         dlg = CaixaDetalhesDialog(caixa, self)
         dlg.exec()
 
-    def _aplicar_resultado(self, resultado):
-        if not resultado["ok"]:
-            QMessageBox.warning(self, "Aviso", resultado["mensagem"])
-            return
-
-        if resultado.get("tipo") == "funcionario":
-            self.funcionario_atual = resultado["funcionario"]
-            self.status_label.setText(f"Funcionário atual: {self.funcionario_atual.nome}")
-            return
-
-        if resultado.get("tipo") == "caixa":
-            QMessageBox.information(self, "Sucesso", resultado["mensagem"])
+    def _processar_codigo(self, codigo: str, limpar_input: bool = False):
+        session = get_session()
+        try:
+            resultado = self.scan_service.buscar_caixa_por_codigo(session, codigo)
+            if not resultado["ok"]:
+                QMessageBox.warning(self, "Aviso", resultado["mensagem"])
+                return
             self._abrir_detalhes_caixa(resultado["caixa"])
+        finally:
+            session.close()
+            if limpar_input:
+                self.scan_input.clear()
+                self.scan_input.setFocus()
 
-    def _processar_usb(self):
+    def _processar_filtro_manual(self):
         codigo = self.scan_input.text().strip()
         if not codigo:
+            QMessageBox.warning(self, "Validação", "Informe um código de barras para filtrar.")
             return
-        session = get_session()
-        try:
-            resultado = self.scan_service.processar_scan(session, codigo, self.funcionario_atual, origem="usb")
-            self._aplicar_resultado(resultado)
-        finally:
-            session.close()
-            self.scan_input.clear()
-            self.scan_input.setFocus()
-
-    def _processar_celular(self):
-        codigo = self.mobile_input.text().strip()
-        if not codigo:
-            QMessageBox.warning(self, "Validação", "Informe um código no campo de celular.")
-            return
-        session = get_session()
-        try:
-            resultado = self.scan_service.processar_scan_celular(session, codigo, self.funcionario_atual)
-            self._aplicar_resultado(resultado)
-        finally:
-            session.close()
-            self.mobile_input.clear()
-            self.scan_input.setFocus()
+        self._processar_codigo(codigo, limpar_input=True)
 
     def _verificar_scan_usb_celular(self):
         status = self.mobile_usb_service.status_conexao()
         if status.conectado:
-            self.mobile_status_label.setText(f"Monitor USB celular: <b style='color:#52d66a'>Conectado</b> - {status.mensagem}")
+            self.mobile_status_label.setText(f"Status ADB: <b style='color:#52d66a'>Conectado</b> - {status.mensagem}")
         else:
-            self.mobile_status_label.setText(f"Monitor USB celular: <b style='color:#ff5b5b'>Inválido</b> - {status.mensagem}")
+            self.mobile_status_label.setText(f"Status ADB: <b style='color:#ff5b5b'>Inválido</b> - {status.mensagem}")
 
         codigo = self.mobile_usb_service.ler_codigo_usb()
         if not codigo:
             return
 
-        session = get_session()
-        try:
-            resultado = self.scan_service.processar_scan_celular(session, codigo, self.funcionario_atual)
-            self._aplicar_resultado(resultado)
-        finally:
-            session.close()
+        self._processar_codigo(codigo)

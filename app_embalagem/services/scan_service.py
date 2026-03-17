@@ -37,3 +37,22 @@ class ScanService:
 
     def processar_scan_celular(self, session, codigo: str, funcionario_atual=None):
         return self.processar_scan(session, codigo, funcionario_atual=funcionario_atual, origem="celular")
+
+    def buscar_caixa_por_codigo(self, session, codigo: str):
+        codigo_normalizado = codigo.strip().upper()
+        if not codigo_normalizado:
+            return {"ok": False, "mensagem": "Informe um código de barras para filtrar."}
+
+        if not codigo_normalizado.startswith("CX-"):
+            return {"ok": False, "mensagem": "Código inválido. Use um código de caixa iniciado por CX-."}
+
+        caixa = self.caixa_service.buscar_por_codigo(session, codigo_normalizado)
+        if not caixa:
+            return {"ok": False, "mensagem": "Caixa não encontrada para o código informado."}
+
+        return {
+            "ok": True,
+            "tipo": "caixa",
+            "caixa": caixa,
+            "mensagem": f"Caixa {caixa.codigo_caixa} localizada com sucesso.",
+        }

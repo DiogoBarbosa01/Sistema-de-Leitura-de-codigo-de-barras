@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel, QListWidget, QListWidgetItem, QPushButton, QSplitter, QVBoxLayout, QWidget
 from sqlalchemy import select
 
@@ -13,7 +15,7 @@ class CodigosBarrasWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Códigos de Barras")
-        self.resize(820, 460)
+        self.resize(920, 520)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
         self._carregar_pastas()
@@ -32,13 +34,24 @@ class CodigosBarrasWindow(QWidget):
         layout.addWidget(atualizar_btn)
 
         splitter = QSplitter()
+        listas_splitter = QSplitter(Qt.Vertical)
+
         self.pastas_list = QListWidget()
         self.arquivos_list = QListWidget()
         self.pastas_list.currentItemChanged.connect(self._carregar_arquivos_da_pasta)
+        self.arquivos_list.currentItemChanged.connect(self._mostrar_preview_codigo)
 
-        splitter.addWidget(self.pastas_list)
-        splitter.addWidget(self.arquivos_list)
-        splitter.setSizes([280, 540])
+        listas_splitter.addWidget(self.pastas_list)
+        listas_splitter.addWidget(self.arquivos_list)
+        listas_splitter.setSizes([200, 220])
+
+        self.preview_label = QLabel("Selecione um código de barras para visualizar a imagem.")
+        self.preview_label.setAlignment(Qt.AlignCenter)
+        self.preview_label.setStyleSheet("border:1px solid #3a3a3a; border-radius:8px; padding:8px; min-height:320px;")
+
+        splitter.addWidget(listas_splitter)
+        splitter.addWidget(self.preview_label)
+        splitter.setSizes([320, 600])
 
         layout.addWidget(splitter)
         self.setLayout(layout)
@@ -69,6 +82,8 @@ class CodigosBarrasWindow(QWidget):
         self._organizar_arquivos_legados()
         self.pastas_list.clear()
         self.arquivos_list.clear()
+        self.preview_label.setPixmap(QPixmap())
+        self.preview_label.setText("Selecione um código de barras para visualizar a imagem.")
 
         base = Path(BARCODES_DIR)
         pastas = sorted([p for p in base.iterdir() if p.is_dir()]) if base.exists() else []
@@ -90,6 +105,8 @@ class CodigosBarrasWindow(QWidget):
 
     def _carregar_arquivos_da_pasta(self, item_atual, _item_antigo):
         self.arquivos_list.clear()
+        self.preview_label.setPixmap(QPixmap())
+        self.preview_label.setText("Selecione um código de barras para visualizar a imagem.")
         if not item_atual:
             return
 
@@ -100,4 +117,26 @@ class CodigosBarrasWindow(QWidget):
             return
 
         for arquivo in arquivos:
-            self.arquivos_list.addItem(arquivo.name)
+            item = QListWidgetItem(arquivo.name)
+            item.setData(32, str(arquivo))
+            self.arquivos_list.addItem(item)
+
+        self.arquivos_list.setCurrentRow(0)
+
+    def _mostrar_preview_codigo(self, item_atual, _item_antigo):
+        if not item_atual:
+            return
+
+        caminho = item_atual.data(32)
+        if not caminho:
+            self.preview_label.setPixmap(QPixmap())
+            self.preview_label.setText("Sem imagem disponível para este item.")
+            return
+
+        pixmap = QPixmap(caminho)
+        if pixmap.isNull():
+            self.preview_label.setPixmap(QPixmap())
+            self.preview_label.setText("Não foi possível carregar a imagem do código de barras.")
+            return
+
+        self.preview_label.setPixmap(pixmap.scaled(560, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation))
