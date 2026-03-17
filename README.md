@@ -30,8 +30,8 @@ app_embalagem/
 ## 2) Criar banco PostgreSQL
 
 ```sql
-CREATE DATABASE embalagem_db;
-CREATE USER embalagem_user WITH PASSWORD 'embalagem123';
+CREATE DATABASE app_embalagem;
+CREATE USER embalagem_user WITH PASSWORD '...';
 GRANT ALL PRIVILEGES ON DATABASE embalagem_db TO embalagem_user;
 ```
 
@@ -49,7 +49,7 @@ Use variáveis de ambiente (opcional). Se não definir, usa defaults do `config.
 
 ```bash
 export DB_HOST=localhost
-export DB_PORT=5432
+export DB_PORT=****
 export DB_NAME=embalagem_db
 export DB_USER=embalagem_user
 export DB_PASSWORD=embalagem123
@@ -69,8 +69,8 @@ python -m app_embalagem.main
 ```
 
 ### Login padrão
-- usuário: `admin`
-- senha: `admin123`
+- usuário: `...`
+- senha: `...`
 
 ## 6) Fluxo do scanner
 1. Escaneie `FUNC-xxxx` para selecionar funcionário ativo.
@@ -146,7 +146,7 @@ Configuração sugerida no Binary Eye (IP do PC: `192.168.2.110`):
 - Ativar "Encaminhar digitalizações".
 
 **Se o tipo for `POST application/json`:**
-- URL de encaminhamento: `http://192.168.2.110:8765/scan`
+- URL de encaminhamento: `http://192.168.2.110:876/scan`
 - Body JSON: `{"code":"{CODE}"}`
 
 **Se o tipo for `POST application/x-www-form-urlencoded`:**
@@ -192,11 +192,11 @@ Exemplos de apps que podem ser usados no Android (com automação/atalho para sa
 - Veja o arquivo `README_USB_PC.md` para instruções completas de Windows/Linux/macOS e diagnóstico ADB.
 
 - ##16) Todos os PIP necessários para instalação
-- pip install pyside6
--pip install sqlalchemy
--pip install psycopg2-binary
--pip install python-barcode
--pip install pillow
--pip install pyinstaller
+-`pip install pyside`
+-`pip install sqlalchemy`
+-`pip install psycopg2-binary`
+-`pip install python-barcode`
+-`pip install pillow`
+-`pip install pyinstaller`
 
 Use eles caso necessite abrir o sistema em outros computadores para edição de codigo
