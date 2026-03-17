@@ -1,6 +1,13 @@
-from PySide6.QtWidgets import QGridLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
+from app_embalagem.database.connection import get_session
+from app_embalagem.services.mobile_request_service import MobileRequestService
+from app_embalagem.services.mobile_usb_service import MobileUsbService
+from app_embalagem.services.scan_service import ScanService
+from app_embalagem.utils.sound import beep_scan
 from app_embalagem.utils.theme import APP_STYLESHEET
+from app_embalagem.views.caixa_detalhes_dialog import CaixaDetalhesDialog
 from app_embalagem.views.codigos_barras_window import CodigosBarrasWindow
 from app_embalagem.views.dashboard_window import DashboardWindow
 from app_embalagem.views.historico_window import HistoricoWindow
@@ -11,10 +18,23 @@ class PageOperador(QWidget):
     def __init__(self, usuario):
         super().__init__()
         self.usuario = usuario
+        self.scan_service = ScanService()
+        self.mobile_usb_service = MobileUsbService()
+        self.mobile_request_service = MobileRequestService()
+
         self.setWindowTitle(f"Página Operador - {usuario.nome}")
         self.resize(760, 420)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
+
+        try:
+            self.mobile_request_service.iniciar()
+        except Exception:
+            pass
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self._monitorar)
+        self.timer.start(1800)
 
     def _montar_ui(self):
         layout = QVBoxLayout()
@@ -23,9 +43,22 @@ class PageOperador(QWidget):
         titulo.setObjectName("tituloPagina")
         layout.addWidget(titulo)
 
+        status_linha = QHBoxLayout()
+        self.mobile_status_label = QLabel("📱 celular: inválido")
+        self.host_status_label = QLabel("🖥 host: inválido")
+        status_linha.addWidget(self.mobile_status_label)
+        status_linha.addWidget(self.host_status_label)
+        status_linha.addStretch()
+        layout.addLayout(status_linha)
+
         subtitulo = QLabel(f"Olá, {self.usuario.nome}. Selecione a ação desejada.")
         subtitulo.setObjectName("subtitulo")
         layout.addWidget(subtitulo)
+
+        self.scan_input = QLineEdit()
+        self.scan_input.setPlaceholderText("Leitura rápida: escaneie/digite código CX-... sem abrir scanner")
+        self.scan_input.returnPressed.connect(self._processar_codigo_manual)
+        layout.addWidget(self.scan_input)
 
         botoes = QGridLayout()
         self.scanner_btn = QPushButton("Scanner")
@@ -45,6 +78,44 @@ class PageOperador(QWidget):
 
         layout.addLayout(botoes)
         self.setLayout(layout)
+
+    def closeEvent(self, event):
+        self.mobile_request_service.parar()
+        super().closeEvent(event)
+
+    def _processar_codigo(self, codigo: str):
+        session = get_session()
+        try:
+            resultado = self.scan_service.buscar_caixa_por_codigo(session, codigo)
+            if not resultado["ok"]:
+                return
+            beep_scan()
+            CaixaDetalhesDialog(resultado["caixa"], self).exec()
+        finally:
+            session.close()
+
+    def _processar_codigo_manual(self):
+        codigo = self.scan_input.text().strip()
+        if not codigo:
+            return
+        self._processar_codigo(codigo)
+        self.scan_input.clear()
+
+    def _monitorar(self):
+        status_mobile = self.mobile_usb_service.status_conexao().conectado
+        self.mobile_status_label.setText(f"📱 celular: {'🟢 conectado' if status_mobile else '🔴 inválido'}")
+
+        status_host = self.mobile_request_service.status().ativo
+        self.host_status_label.setText(f"🖥 host: {'🟢 conectado' if status_host else '🔴 inválido'}")
+
+        codigo_request = self.mobile_request_service.ler_codigo()
+        if codigo_request:
+            self._processar_codigo(codigo_request)
+            return
+
+        codigo_usb = self.mobile_usb_service.ler_codigo_usb()
+        if codigo_usb:
+            self._processar_codigo(codigo_usb)
 
     def abrir_scanner(self):
         self.w_scanner = ScannerWindow()

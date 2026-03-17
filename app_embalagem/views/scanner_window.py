@@ -5,6 +5,7 @@ from app_embalagem.database.connection import get_session
 from app_embalagem.services.mobile_request_service import MobileRequestService
 from app_embalagem.services.mobile_usb_service import MobileUsbService
 from app_embalagem.services.scan_service import ScanService
+from app_embalagem.utils.sound import beep_scan
 from app_embalagem.utils.theme import APP_STYLESHEET
 from app_embalagem.views.caixa_detalhes_dialog import CaixaDetalhesDialog
 
@@ -22,7 +23,7 @@ class ScannerWindow(QWidget):
         try:
             self.mobile_request_service.iniciar()
         except Exception as exc:
-            self.mobile_req_label.setText(f"Requisição via celular: erro ao iniciar ({exc})")
+            self.mobile_req_label.setText("🖥 host: 🔴 inválido")
 
         self.monitor_timer = QTimer(self)
         self.monitor_timer.timeout.connect(self._monitorar_entradas)
@@ -31,10 +32,10 @@ class ScannerWindow(QWidget):
     def _montar_ui(self):
         layout = QVBoxLayout()
 
-        self.mobile_status_label = QLabel("Status ADB: verificando...")
+        self.mobile_status_label = QLabel("📱 celular: inválido")
         layout.addWidget(self.mobile_status_label)
 
-        self.mobile_req_label = QLabel("Requisição via celular: inicializando...")
+        self.mobile_req_label = QLabel("🖥 host: inválido")
         layout.addWidget(self.mobile_req_label)
 
         subtitulo = QLabel("Digite, escaneie USB ou envie pelo celular para solicitar busca da caixa")
@@ -69,6 +70,7 @@ class ScannerWindow(QWidget):
             if not resultado["ok"]:
                 QMessageBox.warning(self, "Aviso", resultado["mensagem"])
                 return
+            beep_scan()
             self._abrir_detalhes_caixa(resultado["caixa"])
         finally:
             session.close()
@@ -111,16 +113,12 @@ class ScannerWindow(QWidget):
     def _atualizar_statuses(self):
         status = self.mobile_usb_service.status_conexao()
         if status.conectado:
-            self.mobile_status_label.setText(f"Status ADB: <b style='color:#52d66a'>Conectado</b> - {status.mensagem}")
+            self.mobile_status_label.setText("📱 celular: 🟢 conectado")
         else:
-            self.mobile_status_label.setText(f"Status ADB: <b style='color:#ff5b5b'>Inválido</b> - {status.mensagem}")
+            self.mobile_status_label.setText("📱 celular: 🔴 inválido")
 
         req_status = self.mobile_request_service.status()
         if req_status.ativo:
-            self.mobile_req_label.setText(
-                f"Requisição via celular: <b style='color:#52d66a'>Ativa</b> - {req_status.mensagem}"
-            )
+            self.mobile_req_label.setText("🖥 host: 🟢 conectado")
         else:
-            self.mobile_req_label.setText(
-                f"Requisição via celular: <b style='color:#ff5b5b'>Inativa</b> - {req_status.mensagem}"
-            )
+            self.mobile_req_label.setText("🖥 host: 🔴 inválido")

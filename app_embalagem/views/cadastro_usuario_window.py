@@ -1,20 +1,9 @@
-from PySide6.QtWidgets import (
-    QCheckBox,
-    QComboBox,
-    QFormLayout,
-    QLineEdit,
-    QMessageBox,
-    QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QCheckBox, QComboBox, QFormLayout, QLineEdit, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.usuario_service import UsuarioService
-from app_embalagem.utils.validators import validar_texto_obrigatorio
 from app_embalagem.utils.theme import APP_STYLESHEET
+from app_embalagem.utils.validators import validar_texto_obrigatorio
 
 
 class CadastroUsuarioWindow(QWidget):
@@ -24,7 +13,6 @@ class CadastroUsuarioWindow(QWidget):
         self.setWindowTitle("Cadastro de Usuário")
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
-        self._carregar_usuarios()
 
     def _montar_ui(self):
         layout = QVBoxLayout()
@@ -50,12 +38,8 @@ class CadastroUsuarioWindow(QWidget):
         salvar_btn = QPushButton("Salvar usuário")
         salvar_btn.clicked.connect(self._salvar)
 
-        self.tabela = QTableWidget(0, 4)
-        self.tabela.setHorizontalHeaderLabels(["ID", "Username", "Nome", "Perfil"])
-
         layout.addLayout(form)
         layout.addWidget(salvar_btn)
-        layout.addWidget(self.tabela)
         self.setLayout(layout)
 
     def _salvar(self):
@@ -85,22 +69,8 @@ class CadastroUsuarioWindow(QWidget):
             self.senha_input.clear()
             self.perfil_combo.setCurrentText("operador")
             self.ativo_check.setChecked(True)
-            self._carregar_usuarios()
         except Exception as exc:
             session.rollback()
             QMessageBox.critical(self, "Erro", str(exc))
-        finally:
-            session.close()
-
-    def _carregar_usuarios(self):
-        session = get_session()
-        try:
-            usuarios = self.service.listar_usuarios(session)
-            self.tabela.setRowCount(len(usuarios))
-            for i, usuario in enumerate(usuarios):
-                self.tabela.setItem(i, 0, QTableWidgetItem(str(usuario.id)))
-                self.tabela.setItem(i, 1, QTableWidgetItem(usuario.username))
-                self.tabela.setItem(i, 2, QTableWidgetItem(usuario.nome))
-                self.tabela.setItem(i, 3, QTableWidgetItem(usuario.perfil))
         finally:
             session.close()

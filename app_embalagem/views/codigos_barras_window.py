@@ -2,7 +2,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel, QListWidget, QListWidgetItem, QPushButton, QSplitter, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QLabel, QPushButton, QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 from sqlalchemy import select
 
 from app_embalagem.config import BARCODES_DIR
@@ -15,10 +15,10 @@ class CodigosBarrasWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Códigos de Barras")
-        self.resize(920, 520)
+        self.resize(980, 560)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
-        self._carregar_pastas()
+        self._carregar_explorador()
 
     def _montar_ui(self):
         layout = QVBoxLayout()
@@ -26,38 +26,33 @@ class CodigosBarrasWindow(QWidget):
         titulo.setObjectName("tituloPagina")
         layout.addWidget(titulo)
 
-        self.status_label = QLabel("Pastas por Nº do pedido")
+        self.status_label = QLabel("Explorador de arquivos das etiquetas")
+        self.status_label.setObjectName("subtitulo")
         layout.addWidget(self.status_label)
 
-        atualizar_btn = QPushButton("Atualizar pastas")
-        atualizar_btn.clicked.connect(self._carregar_pastas)
+        atualizar_btn = QPushButton("Atualizar")
+        atualizar_btn.clicked.connect(self._carregar_explorador)
         layout.addWidget(atualizar_btn)
 
         splitter = QSplitter()
-        listas_splitter = QSplitter(Qt.Vertical)
 
-        self.pastas_list = QListWidget()
-        self.arquivos_list = QListWidget()
-        self.pastas_list.currentItemChanged.connect(self._carregar_arquivos_da_pasta)
-        self.arquivos_list.currentItemChanged.connect(self._mostrar_preview_codigo)
+        self.tree = QTreeWidget()
+        self.tree.setHeaderLabels(["Nome", "Tipo"])
+        self.tree.itemSelectionChanged.connect(self._mostrar_preview_selecionado)
 
-        listas_splitter.addWidget(self.pastas_list)
-        listas_splitter.addWidget(self.arquivos_list)
-        listas_splitter.setSizes([200, 220])
-
-        self.preview_label = QLabel("Selecione um código de barras para visualizar a imagem.")
+        self.preview_label = QLabel("Selecione uma etiqueta (.png) para visualizar.")
         self.preview_label.setAlignment(Qt.AlignCenter)
-        self.preview_label.setStyleSheet("border:1px solid #3a3a3a; border-radius:8px; padding:8px; min-height:320px;")
+        self.preview_label.setObjectName("card")
+        self.preview_label.setMinimumHeight(340)
 
-        splitter.addWidget(listas_splitter)
+        splitter.addWidget(self.tree)
         splitter.addWidget(self.preview_label)
-        splitter.setSizes([320, 600])
+        splitter.setSizes([420, 560])
 
         layout.addWidget(splitter)
         self.setLayout(layout)
 
     def _organizar_arquivos_legados(self):
-        """Move PNGs antigos da raiz para pasta do número do pedido, quando possível."""
         base = Path(BARCODES_DIR)
         arquivos_soltos = list(base.glob("*.png"))
         if not arquivos_soltos:
@@ -66,8 +61,7 @@ class CodigosBarrasWindow(QWidget):
         session = get_session()
         try:
             for arquivo in arquivos_soltos:
-                codigo = arquivo.stem
-                caixa = session.scalar(select(Caixa).where(Caixa.codigo_caixa == codigo))
+                caixa = session.scalar(select(Caixa).where(Caixa.codigo_caixa == arquivo.stem))
                 if not caixa:
                     continue
                 pasta_destino = base / str(caixa.arte)
@@ -78,65 +72,58 @@ class CodigosBarrasWindow(QWidget):
         finally:
             session.close()
 
-    def _carregar_pastas(self):
+    def _carregar_explorador(self):
         self._organizar_arquivos_legados()
-        self.pastas_list.clear()
-        self.arquivos_list.clear()
+        self.tree.clear()
         self.preview_label.setPixmap(QPixmap())
-        self.preview_label.setText("Selecione um código de barras para visualizar a imagem.")
+        self.preview_label.setText("Selecione uma etiqueta (.png) para visualizar.")
 
         base = Path(BARCODES_DIR)
-        pastas = sorted([p for p in base.iterdir() if p.is_dir()]) if base.exists() else []
+        if not base.exists():
+            self.status_label.setText("Pasta de códigos não encontrada.")
+            return
 
+        pastas = sorted([p for p in base.iterdir() if p.is_dir()])
         if not pastas:
-            self.status_label.setText(
-                "Nenhuma pasta encontrada. Gere uma etiqueta para criar pastas por Nº do pedido (ex.: 1000)."
-            )
+            self.status_label.setText("Nenhuma pasta encontrada. Gere uma etiqueta para popular o explorador.")
             return
 
+        total_arquivos = 0
         for pasta in pastas:
-            qtd_png = len(list(pasta.glob("*.png")))
-            item = QListWidgetItem(f"{pasta.name} ({qtd_png})")
-            item.setData(32, str(pasta))
-            self.pastas_list.addItem(item)
+            pasta_item = QTreeWidgetItem([pasta.name, "Pasta"])
+            pasta_item.setData(0, Qt.UserRole, str(pasta))
+            pasta_item.setData(1, Qt.UserRole, "folder")
+            pasta_item.setIcon(0, self.style().standardIcon(self.style().SP_DirIcon))
 
-        self.status_label.setText(f"{len(pastas)} pasta(s) encontrada(s).")
-        self.pastas_list.setCurrentRow(0)
+            for arquivo in sorted(pasta.glob("*.png")):
+                total_arquivos += 1
+                file_item = QTreeWidgetItem([arquivo.name, "Arquivo PNG"])
+                file_item.setData(0, Qt.UserRole, str(arquivo))
+                file_item.setData(1, Qt.UserRole, "file")
+                file_item.setIcon(0, self.style().standardIcon(self.style().SP_FileIcon))
+                pasta_item.addChild(file_item)
 
-    def _carregar_arquivos_da_pasta(self, item_atual, _item_antigo):
-        self.arquivos_list.clear()
-        self.preview_label.setPixmap(QPixmap())
-        self.preview_label.setText("Selecione um código de barras para visualizar a imagem.")
-        if not item_atual:
+            self.tree.addTopLevelItem(pasta_item)
+            pasta_item.setExpanded(True)
+
+        self.status_label.setText(f"{len(pastas)} pasta(s) e {total_arquivos} arquivo(s) carregados.")
+
+    def _mostrar_preview_selecionado(self):
+        itens = self.tree.selectedItems()
+        if not itens:
             return
 
-        pasta = Path(item_atual.data(32))
-        arquivos = sorted(pasta.glob("*.png"))
-        if not arquivos:
-            self.arquivos_list.addItem("(Sem códigos PNG nesta pasta)")
-            return
-
-        for arquivo in arquivos:
-            item = QListWidgetItem(arquivo.name)
-            item.setData(32, str(arquivo))
-            self.arquivos_list.addItem(item)
-
-        self.arquivos_list.setCurrentRow(0)
-
-    def _mostrar_preview_codigo(self, item_atual, _item_antigo):
-        if not item_atual:
-            return
-
-        caminho = item_atual.data(32)
-        if not caminho:
+        item = itens[0]
+        if item.data(1, Qt.UserRole) != "file":
             self.preview_label.setPixmap(QPixmap())
-            self.preview_label.setText("Sem imagem disponível para este item.")
+            self.preview_label.setText("Selecione um arquivo PNG para visualizar.")
             return
 
+        caminho = item.data(0, Qt.UserRole)
         pixmap = QPixmap(caminho)
         if pixmap.isNull():
             self.preview_label.setPixmap(QPixmap())
-            self.preview_label.setText("Não foi possível carregar a imagem do código de barras.")
+            self.preview_label.setText("Não foi possível carregar a imagem selecionada.")
             return
 
         self.preview_label.setPixmap(pixmap.scaled(560, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation))
