@@ -1,3 +1,6 @@
+import re
+from urllib.parse import unquote
+
 from app_embalagem.services.caixa_service import CaixaService
 from app_embalagem.services.funcionario_service import FuncionarioService
 from app_embalagem.services.movimentacao_service import MovimentacaoService
@@ -8,6 +11,19 @@ class ScanService:
         self.funcionario_service = FuncionarioService()
         self.caixa_service = CaixaService()
         self.mov_service = MovimentacaoService()
+
+
+    @staticmethod
+    def _extrair_codigo_caixa(valor: str) -> str:
+        bruto = unquote((valor or "").strip()).upper()
+        if not bruto:
+            return ""
+
+        if bruto.startswith("CX-"):
+            return bruto.split()[0].strip()
+
+        match = re.search(r"CX-[A-Z0-9-]+", bruto)
+        return match.group(0) if match else ""
 
     def processar_scan(self, session, codigo: str, funcionario_atual=None, origem: str = "usb"):
         codigo = codigo.strip().upper()
@@ -39,11 +55,12 @@ class ScanService:
         return self.processar_scan(session, codigo, funcionario_atual=funcionario_atual, origem="celular")
 
     def buscar_caixa_por_codigo(self, session, codigo: str):
-        codigo_normalizado = codigo.strip().upper()
-        if not codigo_normalizado:
+        codigo_digitado = (codigo or "").strip()
+        codigo_normalizado = self._extrair_codigo_caixa(codigo_digitado)
+        if not codigo_digitado:
             return {"ok": False, "mensagem": "Informe um código de barras para filtrar."}
 
-        if not codigo_normalizado.startswith("CX-"):
+        if not codigo_normalizado:
             return {"ok": False, "mensagem": "Código inválido. Use um código de caixa iniciado por CX-."}
 
         caixa = self.caixa_service.buscar_por_codigo(session, codigo_normalizado)
