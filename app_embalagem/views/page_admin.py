@@ -15,6 +15,7 @@ from app_embalagem.views.cadastro_funcionario_window import CadastroFuncionarioW
 from app_embalagem.views.codigos_barras_window import CodigosBarrasWindow
 from app_embalagem.views.dashboard_window import DashboardWindow
 from app_embalagem.views.scanner_window import ScannerWindow
+from app_embalagem.views.shadow_scan_box import ShadowScanBox
 
 
 class PageAdmin(QWidget):
@@ -25,13 +26,15 @@ class PageAdmin(QWidget):
         self.scan_service = ScanService()
         self.mobile_usb_service = MobileUsbService()
         self.mobile_request_service = MobileRequestService()
-        self._janela_filtro_invisivel = None
+        self.shadow_scan_box = ShadowScanBox(self)
 
         self.setWindowTitle(f"Página Admin - {usuario.nome}")
         self.resize(1200, 700)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
         self._atualizar_tabela_caixas()
+        self.shadow_scan_box.codigo_detectado.connect(self._processar_codigo)
+        self.shadow_scan_box.iniciar()
 
         try:
             self.mobile_request_service.iniciar()
@@ -40,7 +43,11 @@ class PageAdmin(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._monitorar)
-        self.timer.start(1800)
+        self.timer.start(1200)
+
+        self.tabela_timer = QTimer(self)
+        self.tabela_timer.timeout.connect(self._atualizar_tabela_caixas)
+        self.tabela_timer.start(6000)
 
     def _montar_ui(self):
         layout = QVBoxLayout()
@@ -97,14 +104,10 @@ class PageAdmin(QWidget):
 
     def closeEvent(self, event):
         self.mobile_request_service.parar()
+        self.shadow_scan_box.parar()
         super().closeEvent(event)
 
-    def _acionar_filtro_invisivel(self, caixa):
-        self._janela_filtro_invisivel = CodigosBarrasWindow(modo_invisivel=True)
-        self._janela_filtro_invisivel.preparar_filtro_da_caixa(caixa)
-
     def _abrir_detalhes(self, caixa):
-        self._acionar_filtro_invisivel(caixa)
         CaixaDetalhesDialog(caixa, self).exec()
 
     def _processar_codigo(self, codigo: str):
@@ -121,7 +124,6 @@ class PageAdmin(QWidget):
 
     def _monitorar(self):
         self._atualizar_statuses()
-        self._atualizar_tabela_caixas()
 
         codigo_request = self.mobile_request_service.ler_codigo()
         if codigo_request:

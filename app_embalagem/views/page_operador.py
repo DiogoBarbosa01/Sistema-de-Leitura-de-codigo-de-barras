@@ -11,6 +11,7 @@ from app_embalagem.views.caixa_detalhes_dialog import CaixaDetalhesDialog
 from app_embalagem.views.codigos_barras_window import CodigosBarrasWindow
 from app_embalagem.views.dashboard_window import DashboardWindow
 from app_embalagem.views.scanner_window import ScannerWindow
+from app_embalagem.views.shadow_scan_box import ShadowScanBox
 
 
 class PageOperador(QWidget):
@@ -20,12 +21,14 @@ class PageOperador(QWidget):
         self.scan_service = ScanService()
         self.mobile_usb_service = MobileUsbService()
         self.mobile_request_service = MobileRequestService()
-        self._janela_filtro_invisivel = None
+        self.shadow_scan_box = ShadowScanBox(self)
 
         self.setWindowTitle(f"Página Operador - {usuario.nome}")
         self.resize(760, 420)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
+        self.shadow_scan_box.codigo_detectado.connect(self._processar_codigo)
+        self.shadow_scan_box.iniciar()
 
         try:
             self.mobile_request_service.iniciar()
@@ -74,11 +77,8 @@ class PageOperador(QWidget):
 
     def closeEvent(self, event):
         self.mobile_request_service.parar()
+        self.shadow_scan_box.parar()
         super().closeEvent(event)
-
-    def _acionar_filtro_invisivel(self, caixa):
-        self._janela_filtro_invisivel = CodigosBarrasWindow(modo_invisivel=True)
-        self._janela_filtro_invisivel.preparar_filtro_da_caixa(caixa)
 
     def _processar_codigo(self, codigo: str):
         session = get_session()
@@ -87,7 +87,6 @@ class PageOperador(QWidget):
             if not resultado["ok"]:
                 return
             beep_scan()
-            self._acionar_filtro_invisivel(resultado["caixa"])
             CaixaDetalhesDialog(resultado["caixa"], self).exec()
         finally:
             session.close()
