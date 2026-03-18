@@ -63,7 +63,7 @@ class CodigosBarrasWindow(QWidget):
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
 
-        left_layout.addWidget(QLabel("Pastas (horizontal)"))
+        left_layout.addWidget(QLabel("Pastas"))
         self.pastas_list = QListWidget()
         self.pastas_list.setViewMode(QListWidget.IconMode)
         self.pastas_list.setFlow(QListWidget.LeftToRight)
