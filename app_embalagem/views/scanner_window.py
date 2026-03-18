@@ -6,12 +6,14 @@ from app_embalagem.services.scan_service import ScanService
 from app_embalagem.utils.sound import beep_scan
 from app_embalagem.utils.theme import APP_STYLESHEET
 from app_embalagem.views.caixa_detalhes_dialog import CaixaDetalhesDialog
+from app_embalagem.views.codigos_barras_window import CodigosBarrasWindow
 
 
 class ScannerWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.scan_service = ScanService()
+        self._janela_filtro_invisivel = None
         self.setWindowTitle("Busca de Caixa")
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
@@ -41,7 +43,12 @@ class ScannerWindow(QWidget):
         self.setLayout(layout)
         QTimer.singleShot(50, self.scan_input.setFocus)
 
+    def _acionar_filtro_invisivel(self, caixa):
+        self._janela_filtro_invisivel = CodigosBarrasWindow(modo_invisivel=True)
+        self._janela_filtro_invisivel.preparar_filtro_da_caixa(caixa)
+
     def _abrir_detalhes_caixa(self, caixa):
+        self._acionar_filtro_invisivel(caixa)
         dlg = CaixaDetalhesDialog(caixa, self)
         dlg.exec()
 

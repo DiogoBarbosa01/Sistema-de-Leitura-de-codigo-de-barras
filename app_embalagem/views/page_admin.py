@@ -25,6 +25,7 @@ class PageAdmin(QWidget):
         self.scan_service = ScanService()
         self.mobile_usb_service = MobileUsbService()
         self.mobile_request_service = MobileRequestService()
+        self._janela_filtro_invisivel = None
 
         self.setWindowTitle(f"Página Admin - {usuario.nome}")
         self.resize(1200, 700)
@@ -98,7 +99,12 @@ class PageAdmin(QWidget):
         self.mobile_request_service.parar()
         super().closeEvent(event)
 
+    def _acionar_filtro_invisivel(self, caixa):
+        self._janela_filtro_invisivel = CodigosBarrasWindow(modo_invisivel=True)
+        self._janela_filtro_invisivel.preparar_filtro_da_caixa(caixa)
+
     def _abrir_detalhes(self, caixa):
+        self._acionar_filtro_invisivel(caixa)
         CaixaDetalhesDialog(caixa, self).exec()
 
     def _processar_codigo(self, codigo: str):

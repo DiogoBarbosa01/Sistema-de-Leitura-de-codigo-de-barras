@@ -26,14 +26,17 @@ from app_embalagem.utils.theme import APP_STYLESHEET
 
 
 class CodigosBarrasWindow(QWidget):
-    def __init__(self):
+    def __init__(self, filtro_inicial: str = "", modo_invisivel: bool = False):
         super().__init__()
         self.pasta_atual: Path | None = None
         self.arquivos_da_pasta: list[Path] = []
+        self.modo_invisivel = modo_invisivel
         self.setWindowTitle("Códigos de Barras")
         self.resize(1180, 650)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
+        if filtro_inicial:
+            self.filtro_input.setText(filtro_inicial)
         self._carregar_explorador()
 
     def _montar_ui(self):
@@ -50,10 +53,10 @@ class CodigosBarrasWindow(QWidget):
         self.filtro_input = QLineEdit()
         self.filtro_input.setPlaceholderText("Filtrar por nº do pedido (nome da pasta)")
         self.filtro_input.textChanged.connect(self._carregar_explorador)
-        atualizar_btn = QPushButton("Atualizar")
-        atualizar_btn.clicked.connect(self._carregar_explorador)
+        self.filtrar_btn = QPushButton("Filtrar")
+        self.filtrar_btn.clicked.connect(self._carregar_explorador)
         filtro_linha.addWidget(self.filtro_input)
-        filtro_linha.addWidget(atualizar_btn)
+        filtro_linha.addWidget(self.filtrar_btn)
         layout.addLayout(filtro_linha)
 
         splitter = QSplitter()
@@ -112,6 +115,30 @@ class CodigosBarrasWindow(QWidget):
 
         layout.addWidget(splitter)
         self.setLayout(layout)
+
+
+    def executar_filtro_automatico(self, valor_filtro: str):
+        self.filtro_input.setText((valor_filtro or "").strip())
+        self.filtrar_btn.click()
+
+    def preparar_filtro_da_caixa(self, caixa):
+        if not caixa:
+            return
+
+        self.executar_filtro_automatico(str(getattr(caixa, "arte", "")))
+
+        for indice in range(self.pastas_list.count()):
+            item = self.pastas_list.item(indice)
+            if item and item.text().split("\n", 1)[0] == str(caixa.arte):
+                self.pastas_list.setCurrentItem(item)
+                break
+
+        nome_arquivo = f"{caixa.codigo_caixa}.png"
+        for indice in range(self.arquivos_list.count()):
+            item = self.arquivos_list.item(indice)
+            if item and item.text() == nome_arquivo:
+                self.arquivos_list.setCurrentItem(item)
+                break
 
     @staticmethod
     def _icone_padrao(style, nome_enum: str) -> QIcon:

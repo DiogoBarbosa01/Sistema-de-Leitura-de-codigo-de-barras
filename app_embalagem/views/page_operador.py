@@ -20,6 +20,7 @@ class PageOperador(QWidget):
         self.scan_service = ScanService()
         self.mobile_usb_service = MobileUsbService()
         self.mobile_request_service = MobileRequestService()
+        self._janela_filtro_invisivel = None
 
         self.setWindowTitle(f"Página Operador - {usuario.nome}")
         self.resize(760, 420)
@@ -75,6 +76,10 @@ class PageOperador(QWidget):
         self.mobile_request_service.parar()
         super().closeEvent(event)
 
+    def _acionar_filtro_invisivel(self, caixa):
+        self._janela_filtro_invisivel = CodigosBarrasWindow(modo_invisivel=True)
+        self._janela_filtro_invisivel.preparar_filtro_da_caixa(caixa)
+
     def _processar_codigo(self, codigo: str):
         session = get_session()
         try:
@@ -82,6 +87,7 @@ class PageOperador(QWidget):
             if not resultado["ok"]:
                 return
             beep_scan()
+            self._acionar_filtro_invisivel(resultado["caixa"])
             CaixaDetalhesDialog(resultado["caixa"], self).exec()
         finally:
             session.close()
