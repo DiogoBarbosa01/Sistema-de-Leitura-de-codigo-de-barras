@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QIcon, QPainter, QPixmap
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter
 from PySide6.QtWidgets import (
@@ -287,12 +287,33 @@ class CodigosBarrasWindow(QWidget):
         self.preview_label.hide()
         self.scroll_area.show()
 
+    @staticmethod
+    def _calcular_area_impressao(printer: QPrinter, largura_px: int, altura_px: int) -> QRectF:
+        pagina = printer.pageRect(QPrinter.DevicePixel)
+        margem_x = pagina.width() * 0.08
+        margem_y = pagina.height() * 0.08
+        largura_max = pagina.width() - (margem_x * 2)
+        altura_max = pagina.height() - (margem_y * 2)
+
+        proporcao = largura_px / altura_px if altura_px else 1
+        largura_destino = min(largura_max, pagina.width() * 0.84)
+        altura_destino = largura_destino / proporcao if proporcao else altura_max
+
+        if altura_destino > altura_max:
+            altura_destino = altura_max
+            largura_destino = altura_destino * proporcao
+
+        x = pagina.x() + ((pagina.width() - largura_destino) / 2)
+        y = pagina.y() + ((pagina.height() - altura_destino) / 2)
+        return QRectF(x, y, largura_destino, altura_destino)
+
     def _imprimir_todos(self):
         if not self.arquivos_da_pasta:
             QMessageBox.warning(self, "Impressão", "Selecione uma pasta com etiquetas para imprimir.")
             return
 
         printer = QPrinter(QPrinter.HighResolution)
+        printer.setFullPage(False)
         printer.setDocName(f"Etiquetas_{self.pasta_atual.name if self.pasta_atual else 'lote'}")
 
         dialog = QPrintDialog(printer, self)
@@ -306,19 +327,16 @@ class CodigosBarrasWindow(QWidget):
 
         try:
             for idx, arquivo in enumerate(self.arquivos_da_pasta):
-                pix = QPixmap(str(arquivo))
-                if pix.isNull():
+                imagem = QPixmap(str(arquivo)).toImage()
+                if imagem.isNull():
                     continue
 
-                rect = painter.viewport()
-                escala = pix.scaled(rect.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                x = (rect.width() - escala.width()) // 2
-                y = (rect.height() - escala.height()) // 2
-                painter.drawPixmap(x, y, escala)
+                area_destino = self._calcular_area_impressao(printer, imagem.width(), imagem.height())
+                painter.drawImage(area_destino, imagem)
 
                 if idx < len(self.arquivos_da_pasta) - 1:
                     printer.newPage()
         finally:
             painter.end()
 
-        QMessageBox.information(self, "Impressão", "Impressão em lote enviada (1 etiqueta por página).")
+        QMessageBox.information(self, "Impressão", "Impressão em lote enviada com tamanho padronizado (1 etiqueta por página).")
