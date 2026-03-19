@@ -7,7 +7,8 @@ Aplicativo desktop em **Python + PySide6** para:
 - ler códigos via scanner USB (como teclado).
 - registrar leituras também por celular via Binare Eye(futuramente vamos criar um app de scam original).
 - rastrear produtividade e histórico.
-
+- 
+(alguns commits foi usado a ferramenta codex para otimização de codigo)
 ## Estrutura
 
 ```text
