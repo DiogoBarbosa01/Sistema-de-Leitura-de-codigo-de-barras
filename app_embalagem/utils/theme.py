@@ -20,6 +20,7 @@ QLabel#loginHint,
 QLabel#tableHint {
     font-size: 13px;
     color: #6b7280;
+
 }
 
 QFrame#card {

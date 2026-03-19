@@ -1,6 +1,5 @@
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
-
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.caixa_service import CaixaService
 from app_embalagem.services.mobile_request_service import MobileRequestService
@@ -15,7 +14,7 @@ from app_embalagem.views.cadastro_funcionario_window import CadastroFuncionarioW
 from app_embalagem.views.codigos_barras_window import CodigosBarrasWindow
 from app_embalagem.views.dashboard_window import DashboardWindow
 from app_embalagem.views.scanner_window import ScannerWindow
-from app_embalagem.views.shadow_scan_box import ShadowScanBox
+
 
 
 class PageAdmin(QWidget):
@@ -26,16 +25,14 @@ class PageAdmin(QWidget):
         self.scan_service = ScanService()
         self.mobile_usb_service = MobileUsbService()
         self.mobile_request_service = MobileRequestService()
-        self.shadow_scan_box = ShadowScanBox(self)
+       
 
         self.setWindowTitle(f"Página Admin - {usuario.nome}")
         self.resize(1200, 700)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
         self._atualizar_tabela_caixas()
-        self.shadow_scan_box.codigo_detectado.connect(self._processar_codigo)
-        self.shadow_scan_box.iniciar()
-
+      
         try:
             self.mobile_request_service.iniciar()
         except Exception:
@@ -103,8 +100,7 @@ class PageAdmin(QWidget):
         self.setLayout(layout)
 
     def closeEvent(self, event):
-        self.mobile_request_service.parar()
-        self.shadow_scan_box.parar()
+        self.mobile_request_service.parar()     
         super().closeEvent(event)
 
     def _abrir_detalhes(self, caixa):

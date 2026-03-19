@@ -1,6 +1,5 @@
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
-
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.mobile_request_service import MobileRequestService
 from app_embalagem.services.mobile_usb_service import MobileUsbService
@@ -11,7 +10,7 @@ from app_embalagem.views.caixa_detalhes_dialog import CaixaDetalhesDialog
 from app_embalagem.views.codigos_barras_window import CodigosBarrasWindow
 from app_embalagem.views.dashboard_window import DashboardWindow
 from app_embalagem.views.scanner_window import ScannerWindow
-from app_embalagem.views.shadow_scan_box import ShadowScanBox
+
 
 
 class PageOperador(QWidget):
@@ -21,14 +20,12 @@ class PageOperador(QWidget):
         self.scan_service = ScanService()
         self.mobile_usb_service = MobileUsbService()
         self.mobile_request_service = MobileRequestService()
-        self.shadow_scan_box = ShadowScanBox(self)
-
         self.setWindowTitle(f"Página Operador - {usuario.nome}")
         self.resize(760, 420)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
-        self.shadow_scan_box.codigo_detectado.connect(self._processar_codigo)
-        self.shadow_scan_box.iniciar()
+      
+       
 
         try:
             self.mobile_request_service.iniciar()
@@ -77,7 +74,7 @@ class PageOperador(QWidget):
 
     def closeEvent(self, event):
         self.mobile_request_service.parar()
-        self.shadow_scan_box.parar()
+       
         super().closeEvent(event)
 
     def _processar_codigo(self, codigo: str):

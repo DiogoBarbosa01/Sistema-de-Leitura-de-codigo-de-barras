@@ -9,7 +9,7 @@ class CaixaDetalhesDialog(QDialog):
     def __init__(self, caixa, parent=None):
         super().__init__(parent)
         self.caixa = caixa
-        self.setWindowTitle("Janela de dados")
+        self.setWindowTitle("Registro Da Caixa")
         self.resize(520, 340)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
@@ -17,7 +17,7 @@ class CaixaDetalhesDialog(QDialog):
     def _montar_ui(self):
         layout = QVBoxLayout()
 
-        titulo = QLabel("Janela de dados da caixa")
+        titulo = QLabel("Dados Da Caixa")
         titulo.setObjectName("tituloPagina")
         layout.addWidget(titulo)
 
