@@ -10,13 +10,7 @@ class MobileUsbStatus:
 
 
 class MobileUsbService:
-    """
-    Integração opcional via ADB para leitura de código vindo do celular em USB.
-
-    Fluxo esperado no celular (app externo):
-    - Escrever o último código lido em /sdcard/embalagem_scan_code.txt
-    - Opcionalmente limpar o arquivo após consumo.
-    """
+  
 
     DEVICE_SCAN_FILE = "/sdcard/embalagem_scan_code.txt"
 

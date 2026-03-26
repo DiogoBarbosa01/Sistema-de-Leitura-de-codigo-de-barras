@@ -4,6 +4,9 @@ from PySide6.QtWidgets import QDialog, QFormLayout, QLabel, QVBoxLayout
 
 from app_embalagem.utils.theme import APP_STYLESHEET
 
+from app_embalagem.utils.helpers import formatar_data_hora
+
+
 
 class CaixaDetalhesDialog(QDialog):
     def __init__(self, caixa, parent=None):
@@ -21,9 +24,10 @@ class CaixaDetalhesDialog(QDialog):
         titulo.setObjectName("tituloPagina")
         layout.addWidget(titulo)
 
-        data_local = self._ajustar_para_horario_local(self.caixa.data_criacao)
-        data_registro = data_local.strftime("%d/%m/%Y")
-        hora_registro = data_local.strftime("%H:%M:%S")
+            
+    
+      
+            
 
         form = QFormLayout()
         form.addRow("Código de barras:", QLabel(self.caixa.codigo_caixa))
@@ -32,16 +36,12 @@ class CaixaDetalhesDialog(QDialog):
         form.addRow("Artigo:", QLabel(self.caixa.artigo))
         form.addRow("Cor:", QLabel(getattr(self.caixa, "cor", "-")))
         form.addRow("Emendas:", QLabel(str(getattr(self.caixa, "emendas", 0))))
-        form.addRow("Metros:", QLabel(f"{self.caixa.metros:.2f}"))
-        form.addRow("Dia registrado:", QLabel(data_registro))
-        form.addRow("Hora registrada:", QLabel(hora_registro))
+        form.addRow("Metros:", QLabel(f"{self.caixa.metros:.2f}"))        
+        form.addRow("Data/Hora:",QLabel(f"{formatar_data_hora(self.caixa.data_criacao)}")
+)
 
+        
         layout.addLayout(form)
         self.setLayout(layout)
 
-    @staticmethod
-    def _ajustar_para_horario_local(data_hora):
-        if data_hora.tzinfo is None:
-            # compatibilidade com registros antigos que estavam em UTC sem timezone.
-            return data_hora.replace(tzinfo=timezone.utc).astimezone()
-        return data_hora.astimezone()
+    

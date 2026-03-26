@@ -136,6 +136,7 @@ class CadastroCaixaWindow(QWidget):
             self.cor_input.clear()
             self.emendas_input.clear()
             self.metros_input.clear()
+            
         except Exception as exc:
             session.rollback()
             QMessageBox.critical(self, "Erro", f"Não foi possível gerar etiqueta: {exc}")
