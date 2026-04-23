@@ -221,7 +221,6 @@ Exemplos de apps que podem ser usados no Android (com automação/atalho para sa
  - Todos os PIP install necessários.
   
  ```Bash
-- pip install pyside
 - pip install sqlalchemy
 - pip install psycopg2-binary
 - pip install python-barcode
