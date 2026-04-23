@@ -96,5 +96,7 @@ class LoginWindow(QWidget):
 
             self.main_window.show()
             self.close()
+        except Exception as exc:
+            QMessageBox.critical(self, "Erro de login", f"Não foi possível realizar o login: {exc}")
         finally:
             session.close()
