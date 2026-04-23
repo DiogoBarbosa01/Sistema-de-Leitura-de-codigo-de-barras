@@ -7,7 +7,8 @@ Aplicativo desktop em **Python + PySide6** para:
 - ler códigos via scanner USB (como teclado).
 - registrar leituras também por celular via Binare Eye(futuramente vamos criar um app de scam original).
 - rastrear produtividade e histórico.
-
+- 
+(alguns commits foi usado a ferramenta codex para otimização de codigo)
 ## Estrutura
 
 ```text
@@ -220,12 +221,12 @@ Exemplos de apps que podem ser usados no Android (com automação/atalho para sa
  - Todos os PIP install necessários.
   
  ```Bash
-  pip install pyside
 - pip install sqlalchemy
 - pip install psycopg2-binary
 - pip install python-barcode
 - pip install pillow
 - pip install pyinstaller
+- pip install pyside6
   ```
 
 Use eles caso necessite abrir o sistema em outros computadores para edição de codigo

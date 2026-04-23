@@ -9,6 +9,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from PySide6.QtGui import QAction
+
 
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.auth_service import AuthService
@@ -26,6 +28,7 @@ class LoginWindow(QWidget):
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
         self._garantir_admin_padrao()
+       
 
     def _montar_ui(self):
         layout = QVBoxLayout()
@@ -46,6 +49,8 @@ class LoginWindow(QWidget):
         self.username_input = QLineEdit()
         self.senha_input = QLineEdit()
         self.senha_input.setEchoMode(QLineEdit.Password)
+        self.acao = QAction("👁️")
+        self.senha_input.addAction(self.acao, QLineEdit.TrailingPosition)
         form.addRow("Usuário:", self.username_input)
         form.addRow("Senha:", self.senha_input)
         card_layout.addLayout(form)
@@ -91,5 +96,7 @@ class LoginWindow(QWidget):
 
             self.main_window.show()
             self.close()
+        except Exception as exc:
+            QMessageBox.critical(self, "Erro de login", f"Não foi possível realizar o login: {exc}")
         finally:
             session.close()

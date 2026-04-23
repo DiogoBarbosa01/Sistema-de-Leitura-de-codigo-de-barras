@@ -16,11 +16,20 @@ class AuthService:
 
     @staticmethod
     def validar_senha(senha: str, senha_hash: str) -> bool:
-        salt_hex, hash_hex = senha_hash.split(":")
-        teste = hashlib.pbkdf2_hmac("sha256", senha.encode(), bytes.fromhex(salt_hex), 120000)
-        return hmac.compare_digest(teste.hex(), hash_hex)
+        # Suporta o formato atual (salt:hash) e também registros antigos
+        # que podem ter sido salvos em texto puro.
+        if ":" not in senha_hash:
+            return hmac.compare_digest(senha, senha_hash)
+
+        try:
+            salt_hex, hash_hex = senha_hash.split(":", maxsplit=1)
+            teste = hashlib.pbkdf2_hmac("sha256", senha.encode(), bytes.fromhex(salt_hex), 120000)
+            return hmac.compare_digest(teste.hex(), hash_hex)
+        except (ValueError, TypeError):
+            return False
 
     def autenticar(self, session, username: str, senha: str) -> Usuario | None:
+        username = username.strip().lower()
         usuario = session.scalar(select(Usuario).where(Usuario.username == username))
         if not usuario or not usuario.ativo:
             return None

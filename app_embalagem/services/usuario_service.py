@@ -20,8 +20,8 @@ class UsuarioService:
         if perfil not in {"admin", "operador"}:
             raise ValueError("Perfil inválido. Use admin ou operador.")
 
-        if len(senha) < 6:
-            raise ValueError("A senha deve ter ao menos 6 caracteres.")
+        if len(senha) < 4:
+            raise ValueError("A senha deve ter ao menos 4 caracteres.")
 
         usuario = Usuario(
             username=username,
