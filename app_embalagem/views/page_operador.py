@@ -1,9 +1,9 @@
 from calendar import monthrange
 from datetime import date, datetime
 
-from PySide6.QtCharts import QChart, QChartView, QLineSeries, QPieSeries, QPieSlice, QValueAxis
+from PySide6.QtCharts import QChart, QChartView, QPieSeries, QPieSlice
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QVBoxLayout, QWidget
 from sqlalchemy import func, select
 
@@ -193,39 +193,19 @@ class PageOperador(QWidget):
         chart_metros.setTitle(f"Revenue • Metros no mês ({total_metros:.1f} m)")
         chart_metros.legend().hide()
 
-        acumulado = QLineSeries()
-        acumulado.setName("Acumulado")
-        acumulado_pen = QPen(QColor("#8B5CF6"))
-        acumulado_pen.setWidth(3)
-        acumulado.setPen(acumulado_pen)
+        donut_metros = QPieSeries()
+        donut_metros.setHoleSize(0.65)
+        dias_com_metros = len([v for v in por_dia_metros.values() if v > 0])
+        dias_sem_metros = max(ultimo_dia - dias_com_metros, 0)
 
-        diario = QLineSeries()
-        diario.setName("Diário")
-        diario_pen = QPen(QColor("#FB923C"))
-        diario_pen.setWidth(2)
-        diario.setPen(diario_pen)
+        fatia_metros = QPieSlice("Com metros", float(total_metros if total_metros > 0 else 1))
+        fatia_sem_metros = QPieSlice("Sem metros", float(dias_sem_metros if dias_sem_metros > 0 else 1))
+        fatia_metros.setColor(QColor("#8B5CF6"))
+        fatia_sem_metros.setColor(QColor("#FDBA74"))
 
-        soma = 0.0
-        for dia in range(1, ultimo_dia + 1):
-            valor_dia = por_dia_metros.get(dia, 0.0)
-            soma += valor_dia
-            acumulado.append(dia, soma)
-            diario.append(dia, valor_dia)
-
-        chart_metros.addSeries(acumulado)
-        chart_metros.addSeries(diario)
-        axis_x = QValueAxis()
-        axis_x.setRange(1, ultimo_dia)
-        axis_x.setTickCount(min(12, ultimo_dia))
-        axis_x.setLabelFormat("%d")
-        axis_y = QValueAxis()
-        axis_y.setLabelFormat("%.0f")
-        chart_metros.addAxis(axis_x, Qt.AlignBottom)
-        chart_metros.addAxis(axis_y, Qt.AlignLeft)
-        acumulado.attachAxis(axis_x)
-        acumulado.attachAxis(axis_y)
-        diario.attachAxis(axis_x)
-        diario.attachAxis(axis_y)
+        donut_metros.append(fatia_metros)
+        donut_metros.append(fatia_sem_metros)
+        chart_metros.addSeries(donut_metros)
         chart_metros.setBackgroundVisible(False)
         self.chart_metros_view.setChart(chart_metros)
 
