@@ -1,20 +1,10 @@
 from calendar import monthrange
 from datetime import date, datetime
 
-from PySide6.QtCharts import QBarCategoryAxis, QBarSeries, QBarSet, QChart, QChartView, QLineSeries, QValueAxis
+from PySide6.QtCharts import QChart, QChartView, QDonutSeries, QLineSeries, QPieSlice, QValueAxis
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QPainter
-from PySide6.QtWidgets import (
-    QFrame,
-    QGridLayout,
-    QHBoxLayout,
-    QLabel,
-    QListWidget,
-    QListWidgetItem,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QVBoxLayout, QWidget
 from sqlalchemy import func, select
 
 from app_embalagem.database.connection import get_session
@@ -41,7 +31,6 @@ class PageOperador(QWidget):
         self.setWindowTitle(f"Página Operador - {usuario.nome}")
         self.resize(1380, 780)
         self._montar_ui()
-        self.setStyleSheet(APP_STYLESHEET)
 
         try:
             self.mobile_request_service.iniciar()
@@ -61,7 +50,8 @@ class PageOperador(QWidget):
         brand = QLabel("AnicornApp")
         brand.setObjectName("opBrand")
         side_layout.addWidget(brand)
-        menu = QListWidget()
+
+        self.menu = QListWidget()
         for item in [
             "Buscar Caixa",
             "Dashboard",
@@ -71,9 +61,10 @@ class PageOperador(QWidget):
             "Receita de Caixas",
             "Sair",
         ]:
-            QListWidgetItem(item, menu)
-        menu.setCurrentRow(1)
-        side_layout.addWidget(menu)
+            QListWidgetItem(item, self.menu)
+        self.menu.setCurrentRow(1)
+        self.menu.itemClicked.connect(self._acao_menu)
+        side_layout.addWidget(self.menu)
 
         center = QVBoxLayout()
         header = QHBoxLayout()
@@ -83,35 +74,16 @@ class PageOperador(QWidget):
         header.addStretch()
         center.addLayout(header)
 
-        subtitulo = QLabel(
-            "Acompanhamento mensal de redução de metros e total de caixas cadastradas."
-        )
+        subtitulo = QLabel("Acompanhamento mensal de redução de metros e total de caixas cadastradas.")
         subtitulo.setObjectName("subtitulo")
         center.addWidget(subtitulo)
-
-        botoes = QGridLayout()
-        self.scanner_btn = QPushButton("Buscar Caixa")
-        self.cadastro_caixa_btn = QPushButton("Cadastro de Caixa")
-        self.dash_btn = QPushButton("Dashboard")
-        self.codigos_btn = QPushButton("Código de Barras")
-
-        self.scanner_btn.clicked.connect(self.abrir_scanner)
-        self.cadastro_caixa_btn.clicked.connect(self.abrir_cadastro_caixa)
-        self.dash_btn.clicked.connect(self.abrir_dashboard)
-        self.codigos_btn.clicked.connect(self.abrir_codigos)
-
-        botoes.addWidget(self.scanner_btn, 0, 0)
-        botoes.addWidget(self.dash_btn, 0, 1)
-        botoes.addWidget(self.cadastro_caixa_btn, 1, 0)
-        botoes.addWidget(self.codigos_btn, 1, 1)
-        center.addLayout(botoes)
 
         graficos = QHBoxLayout()
         self.chart_metros_view = QChartView()
         self.chart_caixas_view = QChartView()
         self.chart_metros_view.setRenderHint(QPainter.Antialiasing)
         self.chart_caixas_view.setRenderHint(QPainter.Antialiasing)
-        graficos.addWidget(self.chart_metros_view, 1)
+        graficos.addWidget(self.chart_metros_view, 2)
         graficos.addWidget(self.chart_caixas_view, 1)
         center.addLayout(graficos, 1)
 
@@ -144,21 +116,35 @@ class PageOperador(QWidget):
         layout.addLayout(center, 8)
         layout.addWidget(profile, 3)
         self.setLayout(layout)
+
         self.setStyleSheet(
             APP_STYLESHEET
             + """
-            QFrame#opSidebar { background:#6D28D9; border-radius:18px; color:white; }
-            QLabel#opBrand { color:white; font-size:24px; font-weight:700; padding:10px; }
-            QListWidget { background:transparent; border:none; color:white; }
+            QWidget { background: #F5F7FB; }
+            QFrame#opSidebar { background:#ffffff; border-radius:18px; color:#111827; border:1px solid #ececf1; }
+            QLabel#opBrand { color:#111827; font-size:24px; font-weight:700; padding:10px; }
+            QListWidget { background:transparent; border:none; color:#111827; }
             QListWidget::item { padding:10px; border-radius:10px; margin:2px 0; }
-            QListWidget::item:selected { background:#fb7185; color:white; }
-            QFrame#opProfile { background:#ffffff; border-radius:18px; padding:10px; }
-            QFrame#opProfileCard { background:qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #FDBA74, stop:1 #FB7185); border-radius:14px; min-height:120px; }
-            QChartView { background:#ffffff; border-radius:14px; border:1px solid #ececf1; min-height:290px; }
+            QListWidget::item:selected { background:#ede9fe; color:#7c3aed; border-left:3px solid #8b5cf6; }
+            QFrame#opProfile { background:#ffffff; border-radius:18px; padding:10px; border:1px solid #ececf1; }
+            QFrame#opProfileCard { background:qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #C4B5FD, stop:1 #8B5CF6); color:#ffffff; border-radius:14px; min-height:120px; }
+            QChartView { background:#ffffff; border-radius:16px; border:1px solid #ececf1; min-height:360px; }
         """
         )
 
         self._atualizar_graficos()
+
+    def _acao_menu(self, item):
+        opcoes = {
+            "Buscar Caixa": self.abrir_scanner,
+            "Dashboard": self.abrir_dashboard,
+            "Cadastro de Caixa": self.abrir_cadastro_caixa,
+            "Código de Barras": self.abrir_codigos,
+            "Sair": self.close,
+        }
+        acao = opcoes.get(item.text())
+        if acao:
+            acao()
 
     def _atualizar_graficos(self):
         hoje = date.today()
@@ -178,6 +164,7 @@ class PageOperador(QWidget):
             )
             resultados_metros = session.execute(stmt_metros).all()
             por_dia_metros = {int(str(dia).split("-")[-1]): float(total or 0) for dia, total in resultados_metros}
+            total_metros = sum(por_dia_metros.values())
 
             stmt_caixas = (
                 select(func.date(Caixa.data_criacao), func.count(Caixa.id))
@@ -187,6 +174,7 @@ class PageOperador(QWidget):
             )
             resultados_caixas = session.execute(stmt_caixas).all()
             por_dia_caixas = {int(str(dia).split("-")[-1]): int(total or 0) for dia, total in resultados_caixas}
+            total_caixas = sum(por_dia_caixas.values())
 
             online = session.execute(
                 select(func.count(func.distinct(Caixa.nome_funcionario))).where(Caixa.data_criacao >= datetime.now().replace(minute=0, second=0, microsecond=0))
@@ -195,46 +183,63 @@ class PageOperador(QWidget):
         finally:
             session.close()
 
-        linha = QLineSeries()
-        acumulado = 0.0
-        for dia in range(1, ultimo_dia + 1):
-            acumulado += por_dia_metros.get(dia, 0.0)
-            linha.append(dia, acumulado)
-
         chart_metros = QChart()
-        chart_metros.addSeries(linha)
-        chart_metros.setTitle("Redução de metros no mês (acumulado diário)")
+        chart_metros.setTitle(f"Revenue • Metros no mês ({total_metros:.1f} m)")
+        chart_metros.legend().hide()
+
+        acumulado = QLineSeries()
+        acumulado.setName("Acumulado")
+        acumulado_pen = QPen(QColor("#8B5CF6"))
+        acumulado_pen.setWidth(3)
+        acumulado.setPen(acumulado_pen)
+
+        diario = QLineSeries()
+        diario.setName("Diário")
+        diario_pen = QPen(QColor("#FB923C"))
+        diario_pen.setWidth(2)
+        diario.setPen(diario_pen)
+
+        soma = 0.0
+        for dia in range(1, ultimo_dia + 1):
+            valor_dia = por_dia_metros.get(dia, 0.0)
+            soma += valor_dia
+            acumulado.append(dia, soma)
+            diario.append(dia, valor_dia)
+
+        chart_metros.addSeries(acumulado)
+        chart_metros.addSeries(diario)
         axis_x = QValueAxis()
-        axis_x.setTitleText("Dia do mês")
         axis_x.setRange(1, ultimo_dia)
+        axis_x.setTickCount(min(12, ultimo_dia))
         axis_x.setLabelFormat("%d")
         axis_y = QValueAxis()
-        axis_y.setTitleText("Metros")
+        axis_y.setLabelFormat("%.0f")
         chart_metros.addAxis(axis_x, Qt.AlignBottom)
         chart_metros.addAxis(axis_y, Qt.AlignLeft)
-        linha.attachAxis(axis_x)
-        linha.attachAxis(axis_y)
+        acumulado.attachAxis(axis_x)
+        acumulado.attachAxis(axis_y)
+        diario.attachAxis(axis_x)
+        diario.attachAxis(axis_y)
+        chart_metros.setBackgroundVisible(False)
         self.chart_metros_view.setChart(chart_metros)
 
-        bar_set = QBarSet("Caixas cadastradas")
-        categorias = [str(d) for d in range(1, ultimo_dia + 1)]
-        for dia in range(1, ultimo_dia + 1):
-            bar_set.append(por_dia_caixas.get(dia, 0))
-        bar_series = QBarSeries()
-        bar_series.append(bar_set)
-
         chart_caixas = QChart()
-        chart_caixas.addSeries(bar_series)
-        chart_caixas.setTitle("Total de caixas cadastradas no mês")
-        axis_cat = QBarCategoryAxis()
-        axis_cat.append(categorias)
-        axis_cat.setTitleText("Dia do mês")
-        axis_bar_y = QValueAxis()
-        axis_bar_y.setTitleText("Quantidade")
-        chart_caixas.addAxis(axis_cat, Qt.AlignBottom)
-        chart_caixas.addAxis(axis_bar_y, Qt.AlignLeft)
-        bar_series.attachAxis(axis_cat)
-        bar_series.attachAxis(axis_bar_y)
+        chart_caixas.setTitle("Device • Receita de Caixas")
+        chart_caixas.legend().hide()
+
+        donut = QDonutSeries()
+        donut.setHoleSize(0.65)
+        com_caixa = QPieSlice("Com cadastro", float(total_caixas))
+        sem_caixa = QPieSlice("Sem cadastro", float(max(ultimo_dia - len([x for x in por_dia_caixas.values() if x > 0]), 0)))
+        com_caixa.setColor(QColor("#8B5CF6"))
+        sem_caixa.setColor(QColor("#FDBA74"))
+        donut.append(com_caixa)
+        donut.append(sem_caixa)
+        chart_caixas.addSeries(donut)
+
+        centro = chart_caixas.title()
+        chart_caixas.setTitle(f"Device • Total: {total_caixas}")
+        chart_caixas.setBackgroundVisible(False)
         self.chart_caixas_view.setChart(chart_caixas)
 
     def closeEvent(self, event):
