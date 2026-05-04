@@ -1,5 +1,5 @@
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.caixa_service import CaixaService
@@ -36,26 +36,40 @@ class DashboardWindow(QWidget):
         return card, valor_label
 
     def _montar_ui(self):
-        root = QVBoxLayout()
+        root = QHBoxLayout()
+
+        sidebar = QFrame()
+        sidebar.setObjectName("dashSidebar")
+        sidebar_layout = QVBoxLayout(sidebar)
+        brand = QLabel("AnicornApp")
+        brand.setObjectName("dashBrand")
+        sidebar_layout.addWidget(brand)
+        menu = QListWidget()
+        for item in ["Dashboard", "Pedidos", "Rastreamento", "Receita", "Análises", "Configurações", "Sair"]:
+            QListWidgetItem(item, menu)
+        menu.setCurrentRow(0)
+        sidebar_layout.addWidget(menu)
+
+        centro = QVBoxLayout()
 
         titulo = QLabel("Painel de Produção")
         titulo.setObjectName("tituloDashboard")
-        root.addWidget(titulo)
+        centro.addWidget(titulo)
 
         detalhe = QLabel("Dados puxados do cadastro de caixas")
         detalhe.setObjectName("textoAux")
-        root.addWidget(detalhe)
+        centro.addWidget(detalhe)
 
         cards_layout = QHBoxLayout()
         card_hoje, self.total_hoje_label = self._criar_card("Caixas cadastradas hoje")
         card_online, self.online_label = self._criar_card("Operadores online")
         cards_layout.addWidget(card_hoje)
         cards_layout.addWidget(card_online)
-        root.addLayout(cards_layout)
+        centro.addLayout(cards_layout)
 
         self.online_detalhe = QLabel("Online: -")
         self.online_detalhe.setObjectName("textoAux")
-        root.addWidget(self.online_detalhe)
+        centro.addWidget(self.online_detalhe)
 
         topo_tabela = QHBoxLayout()
         subtitulo = QLabel("Últimos cadastros de caixa")
@@ -73,9 +87,39 @@ class DashboardWindow(QWidget):
         self.mov_table.verticalHeader().setVisible(False)
         self.mov_table.setAlternatingRowColors(True)
 
-        root.addLayout(topo_tabela)
-        root.addWidget(self.mov_table)
+        centro.addLayout(topo_tabela)
+        centro.addWidget(self.mov_table)
+
+        profile = QFrame()
+        profile.setObjectName("dashProfile")
+        profile_layout = QVBoxLayout(profile)
+        ptitle = QLabel("Perfil")
+        ptitle.setObjectName("subtitulo")
+        profile_layout.addWidget(ptitle)
+        pcard = QFrame()
+        pcard.setObjectName("kpiCard")
+        pcard_layout = QVBoxLayout(pcard)
+        pcard_layout.addWidget(QLabel("Supervisor"))
+        pcard_layout.addWidget(QLabel("Operações"))
+        profile_layout.addWidget(pcard)
+        profile_layout.addWidget(QLabel("Notificações"))
+        profile_layout.addWidget(QLabel("• Sincronização ativa"))
+        profile_layout.addWidget(QLabel("• Dashboard atualizado"))
+        profile_layout.addStretch()
+
+        root.addWidget(sidebar, 2)
+        root.addLayout(centro, 7)
+        root.addWidget(profile, 3)
         self.setLayout(root)
+        self.setStyleSheet(APP_STYLESHEET + """
+            QFrame#dashSidebar { background:#6D28D9; border-radius:18px; color:white; }
+            QLabel#dashBrand { color:white; font-size:24px; font-weight:700; padding:10px; }
+            QFrame#dashProfile { background:#ffffff; border-radius:18px; padding:8px; }
+            QListWidget { background:transparent; border:none; color:white; }
+            QListWidget::item { padding:10px; border-radius:10px; margin:2px 0; }
+            QListWidget::item:selected { background:#fb7185; color:white; }
+            QTableWidget { border-radius:14px; }
+        """)
 
     def _carregar(self):
         session = get_session()
