@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QIcon, QPainter, QPixmap
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter
@@ -17,9 +15,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sqlalchemy import select
-
-from app_embalagem.config import BARCODES_DIR
+from sqlalchemy import func, select
 from app_embalagem.database.connection import get_session
 from app_embalagem.models.caixa import Caixa
 from app_embalagem.utils.theme import APP_STYLESHEET
@@ -28,8 +24,8 @@ from app_embalagem.utils.theme import APP_STYLESHEET
 class CodigosBarrasWindow(QWidget):
     def __init__(self, filtro_inicial: str = ""):
         super().__init__()
-        self.pasta_atual: Path | None = None
-        self.arquivos_da_pasta: list[Path] = []
+        self.pasta_atual: str | None = None
+        self.arquivos_da_pasta: list[Caixa] = []
         self.setWindowTitle("Códigos de Barras")
         self.resize(1180, 650)
         self._montar_ui()
@@ -50,7 +46,7 @@ class CodigosBarrasWindow(QWidget):
 
         filtro_linha = QHBoxLayout()
         self.filtro_input = QLineEdit()
-        self.filtro_input.setPlaceholderText("Filtrar por nº do pedido (nome da pasta)")
+        self.filtro_input.setPlaceholderText("Filtrar por nº do pedido")
         self.filtro_input.textChanged.connect(self._carregar_explorador)
         self.filtrar_btn = QPushButton("Filtrar")
         self.filtrar_btn.clicked.connect(self._carregar_explorador)
@@ -129,28 +125,7 @@ class CodigosBarrasWindow(QWidget):
             return QIcon()
         return style.standardIcon(valor)
 
-    def _organizar_arquivos_legados(self):
-        base = Path(BARCODES_DIR)
-        arquivos_soltos = list(base.glob("*.png"))
-        if not arquivos_soltos:
-            return
-
-        session = get_session()
-        try:
-            for arquivo in arquivos_soltos:
-                caixa = session.scalar(select(Caixa).where(Caixa.codigo_caixa == arquivo.stem))
-                if not caixa:
-                    continue
-                pasta_destino = base / str(caixa.arte)
-                pasta_destino.mkdir(parents=True, exist_ok=True)
-                destino = pasta_destino / arquivo.name
-                if not destino.exists():
-                    arquivo.replace(destino)
-        finally:
-            session.close()
-
     def _carregar_explorador(self):
-        self._organizar_arquivos_legados()
         self.pastas_list.clear()
         self.arquivos_list.clear()
         self.pasta_atual = None
@@ -161,15 +136,20 @@ class CodigosBarrasWindow(QWidget):
         self.abrir_tudo_btn.setEnabled(False)
         self.imprimir_btn.setEnabled(False)
 
-        base = Path(BARCODES_DIR)
-        if not base.exists():
-            self.status_label.setText("Pasta de códigos não encontrada.")
-            return
-
         filtro = self.filtro_input.text().strip().lower()
-        pastas = sorted([p for p in base.iterdir() if p.is_dir()])
+        session = get_session()
+        try:
+            stmt = (
+                select(Caixa.arte, func.count(Caixa.id))
+                .where(Caixa.barcode_png.is_not(None))
+                .group_by(Caixa.arte)
+                .order_by(Caixa.arte)
+            )
+            pastas = session.execute(stmt).all()
+        finally:
+            session.close()
         if filtro:
-            pastas = [p for p in pastas if filtro in p.name.lower()]
+            pastas = [p for p in pastas if filtro in str(p[0]).lower()]
 
         if not pastas:
             self.status_label.setText("Nenhuma pasta encontrada para esse filtro.")
@@ -177,11 +157,10 @@ class CodigosBarrasWindow(QWidget):
 
         pasta_icon = self._icone_padrao(self.style(), "SP_DirIcon")
         total_arquivos = 0
-        for pasta in pastas:
-            qtd_png = len(list(pasta.glob("*.png")))
+        for pedido, qtd_png in pastas:
             total_arquivos += qtd_png
-            item = QListWidgetItem(f"{pasta.name}\n({qtd_png})")
-            item.setData(Qt.UserRole, str(pasta))
+            item = QListWidgetItem(f"{pedido}\n({qtd_png})")
+            item.setData(Qt.UserRole, str(pedido))
             item.setIcon(pasta_icon)
             self.pastas_list.addItem(item)
 
@@ -201,13 +180,22 @@ class CodigosBarrasWindow(QWidget):
             self.imprimir_btn.setEnabled(False)
             return
 
-        self.pasta_atual = Path(item_atual.data(Qt.UserRole))
-        self.arquivos_da_pasta = sorted(self.pasta_atual.glob("*.png"))
+        self.pasta_atual = item_atual.data(Qt.UserRole)
+        session = get_session()
+        try:
+            stmt = (
+                select(Caixa)
+                .where(Caixa.arte == self.pasta_atual, Caixa.barcode_png.is_not(None))
+                .order_by(Caixa.data_criacao.desc())
+            )
+            self.arquivos_da_pasta = session.scalars(stmt).all()
+        finally:
+            session.close()
 
         file_icon = self._icone_padrao(self.style(), "SP_FileIcon")
-        for arquivo in self.arquivos_da_pasta:
-            item = QListWidgetItem(arquivo.name)
-            item.setData(Qt.UserRole, str(arquivo))
+        for caixa in self.arquivos_da_pasta:
+            item = QListWidgetItem(f"{caixa.codigo_caixa}.png")
+            item.setData(Qt.UserRole, caixa.id)
             item.setIcon(file_icon)
             self.arquivos_list.addItem(item)
 
@@ -227,13 +215,21 @@ class CodigosBarrasWindow(QWidget):
             self.preview_label.setText("Selecione um arquivo para pré-visualizar.")
             return
 
-        pixmap = QPixmap(item_atual.data(Qt.UserRole))
+        caixa = next((c for c in self.arquivos_da_pasta if c.id == item_atual.data(Qt.UserRole)), None)
+        pixmap = self._pixmap_de_caixa(caixa) if caixa else QPixmap()
         if pixmap.isNull():
             self.preview_label.setPixmap(QPixmap())
             self.preview_label.setText("Não foi possível carregar a imagem selecionada.")
             return
 
         self.preview_label.setPixmap(pixmap.scaled(620, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
+    @staticmethod
+    def _pixmap_de_caixa(caixa: Caixa | None) -> QPixmap:
+        pixmap = QPixmap()
+        if caixa and caixa.barcode_png:
+            pixmap.loadFromData(caixa.barcode_png, "PNG")
+        return pixmap
 
     def _limpar_scroll_preview(self):
         while self.scroll_layout.count():
@@ -247,16 +243,16 @@ class CodigosBarrasWindow(QWidget):
             return
 
         self._limpar_scroll_preview()
-        for arquivo in self.arquivos_da_pasta:
-            titulo = QLabel(arquivo.name)
+        for caixa in self.arquivos_da_pasta:
+            titulo = QLabel(f"{caixa.codigo_caixa}.png")
             titulo.setObjectName("subtitulo")
             self.scroll_layout.addWidget(titulo)
 
             img = QLabel()
             img.setAlignment(Qt.AlignCenter)
-            pix = QPixmap(str(arquivo))
+            pix = self._pixmap_de_caixa(caixa)
             if pix.isNull():
-                img.setText(f"Falha ao carregar: {arquivo.name}")
+                img.setText(f"Falha ao carregar: {caixa.codigo_caixa}")
             else:
                 img.setPixmap(pix.scaled(620, 220, Qt.KeepAspectRatio, Qt.SmoothTransformation))
             self.scroll_layout.addWidget(img)
@@ -291,7 +287,7 @@ class CodigosBarrasWindow(QWidget):
 
         printer = QPrinter(QPrinter.HighResolution)
         printer.setFullPage(False)
-        printer.setDocName(f"Etiquetas_{self.pasta_atual.name if self.pasta_atual else 'lote'}")
+        printer.setDocName(f"Etiquetas_{self.pasta_atual if self.pasta_atual else 'lote'}")
 
         dialog = QPrintDialog(printer, self)
         if dialog.exec() != QPrintDialog.Accepted:
@@ -303,8 +299,8 @@ class CodigosBarrasWindow(QWidget):
             return
 
         try:
-            for idx, arquivo in enumerate(self.arquivos_da_pasta):
-                imagem = QPixmap(str(arquivo)).toImage()
+            for idx, caixa in enumerate(self.arquivos_da_pasta):
+                imagem = self._pixmap_de_caixa(caixa).toImage()
                 if imagem.isNull():
                     continue
 

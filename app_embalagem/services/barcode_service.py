@@ -1,4 +1,5 @@
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import barcode
 from barcode.writer import ImageWriter
@@ -18,3 +19,11 @@ class BarcodeService:
         code128 = barcode.get("code128", codigo, writer=ImageWriter())
         caminho_arquivo = code128.save(str(caminho_base), options={"write_text": True})
         return caminho_arquivo
+
+    @staticmethod
+    def gerar_codigo_barras_bytes(codigo: str) -> bytes:
+        with TemporaryDirectory() as tmp_dir:
+            caminho_base = Path(tmp_dir) / codigo
+            code128 = barcode.get("code128", codigo, writer=ImageWriter())
+            caminho_arquivo = Path(code128.save(str(caminho_base), options={"write_text": True}))
+            return caminho_arquivo.read_bytes()

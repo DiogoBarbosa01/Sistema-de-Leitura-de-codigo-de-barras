@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Integer, String
+from sqlalchemy import DateTime, Float, Integer, LargeBinary, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app_embalagem.models.base import Base
@@ -19,6 +19,7 @@ class Caixa(Base):
     nome_funcionario: Mapped[str] = mapped_column(String(120), nullable=False, default="-")
     sigla_funcionario: Mapped[str] = mapped_column(String(10), nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="criada", nullable=False)
+    barcode_png: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     data_criacao: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
     movimentacoes = relationship("Movimentacao", back_populates="caixa")

@@ -65,10 +65,11 @@ class CaixaService:
             sigla_funcionario=sigla,
             status=self.STATUS_CRIADA,
         )
+        caixa.barcode_png = BarcodeService.gerar_codigo_barras_bytes(codigo)
         session.add(caixa)
         session.commit()
         session.refresh(caixa)
-        caminho_barcode = BarcodeService.gerar_codigo_barras(codigo, numero_pedido=numero_pedido)
+        caminho_barcode = f"db://caixas/{caixa.id}/barcode"
         return caixa, caminho_barcode
 
     def listar_recentes(self, session, limite: int = 20):

@@ -1,5 +1,5 @@
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.caixa_service import CaixaService
@@ -61,20 +61,12 @@ class DashboardWindow(QWidget):
         subtitulo = QLabel("Últimos cadastros de caixa")
         subtitulo.setObjectName("subtitulo")
 
-        atualizar_btn = QPushButton("Atualizar")
-        atualizar_btn.clicked.connect(self._carregar)
-
-        ultimo_dia_btn = QPushButton("Último dia")
-        ultimo_dia_btn.clicked.connect(self._carregar_ultimo_dia)
-
         self.ultimo_dia_info = QLabel("Último dia: 0")
         self.ultimo_dia_info.setObjectName("textoAux")
 
         topo_tabela.addWidget(subtitulo)
         topo_tabela.addStretch()
         topo_tabela.addWidget(self.ultimo_dia_info)
-        topo_tabela.addWidget(ultimo_dia_btn)
-        topo_tabela.addWidget(atualizar_btn)
 
         self.mov_table = QTableWidget(0, 5)
         self.mov_table.setHorizontalHeaderLabels(["Código", "Nº Pedido", "Funcionário", "Status", "Criada em"])
@@ -85,21 +77,15 @@ class DashboardWindow(QWidget):
         root.addWidget(self.mov_table)
         self.setLayout(root)
 
-    def _carregar_ultimo_dia(self):
-        session = get_session()
-        try:
-            total = self.caixa_service.total_cadastradas_ultimo_dia(session)
-            self.ultimo_dia_info.setText(f"Último dia: {total}")
-        finally:
-            session.close()
-
     def _carregar(self):
         session = get_session()
         try:
             total_hoje = self.caixa_service.total_cadastradas_hoje(session)
+            total_ultimo_dia = self.caixa_service.total_cadastradas_ultimo_dia(session)
             online = self.caixa_service.operadores_online_por_cadastro(session, janela_minutos=15)
 
             self.total_hoje_label.setText(str(total_hoje))
+            self.ultimo_dia_info.setText(f"Último dia: {total_ultimo_dia}")
             self.online_label.setText(str(len(online)))
 
             if online:

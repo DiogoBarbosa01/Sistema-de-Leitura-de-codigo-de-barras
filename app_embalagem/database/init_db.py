@@ -13,6 +13,7 @@ def _adicionar_colunas_faltantes_caixas():
         "ALTER TABLE caixas ADD COLUMN cor VARCHAR(40) NOT NULL DEFAULT '-'",
         "ALTER TABLE caixas ADD COLUMN emendas INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE caixas ADD COLUMN nome_funcionario VARCHAR(120) NOT NULL DEFAULT '-'",
+        "ALTER TABLE caixas ADD COLUMN barcode_png BYTEA",
     ]
     with engine.begin() as conn:
         for cmd in comandos:
