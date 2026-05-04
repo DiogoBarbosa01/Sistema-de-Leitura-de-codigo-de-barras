@@ -83,6 +83,10 @@ class PageOperador(QWidget):
         self.chart_caixas_view = QChartView()
         self.chart_metros_view.setRenderHint(QPainter.Antialiasing)
         self.chart_caixas_view.setRenderHint(QPainter.Antialiasing)
+        self.chart_metros_view.setMinimumHeight(280)
+        self.chart_metros_view.setMaximumHeight(320)
+        self.chart_caixas_view.setMinimumHeight(280)
+        self.chart_caixas_view.setMaximumHeight(320)
         graficos.addWidget(self.chart_metros_view, 2)
         graficos.addWidget(self.chart_caixas_view, 1)
         center.addLayout(graficos, 1)
@@ -123,12 +127,13 @@ class PageOperador(QWidget):
             QWidget { background: #F5F7FB; }
             QFrame#opSidebar { background:#ffffff; border-radius:18px; color:#111827; border:1px solid #ececf1; }
             QLabel#opBrand { color:#111827; font-size:24px; font-weight:700; padding:10px; }
-            QListWidget { background:transparent; border:none; color:#111827; }
-            QListWidget::item { padding:10px; border-radius:10px; margin:2px 0; }
-            QListWidget::item:selected { background:#ede9fe; color:#7c3aed; border-left:3px solid #8b5cf6; }
+            QListWidget { background:transparent; border:none; color:#111827; outline:none; }
+            QListWidget::item { padding:10px; border-radius:10px; margin:2px 0; border:none; }
+            QListWidget::item:hover { background:#f3f4f6; border:none; }
+            QListWidget::item:selected { background:#ede9fe; color:#7c3aed; border:none; }
             QFrame#opProfile { background:#ffffff; border-radius:18px; padding:10px; border:1px solid #ececf1; }
             QFrame#opProfileCard { background:qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #C4B5FD, stop:1 #8B5CF6); color:#ffffff; border-radius:14px; min-height:120px; }
-            QChartView { background:#ffffff; border-radius:16px; border:1px solid #ececf1; min-height:360px; }
+            QChartView { background:#ffffff; border-radius:16px; border:1px solid #ececf1; min-height:280px; max-height:320px; }
         """
         )
 
