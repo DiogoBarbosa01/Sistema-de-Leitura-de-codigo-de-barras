@@ -1,7 +1,7 @@
 from calendar import monthrange
 from datetime import date, datetime
 
-from PySide6.QtCharts import QChart, QChartView, QDonutSeries, QLineSeries, QPieSlice, QValueAxis
+from PySide6.QtCharts import QChart, QChartView, QLineSeries, QPieSeries, QPieSlice, QValueAxis
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QVBoxLayout, QWidget
@@ -227,7 +227,7 @@ class PageOperador(QWidget):
         chart_caixas.setTitle("Device • Receita de Caixas")
         chart_caixas.legend().hide()
 
-        donut = QDonutSeries()
+        donut = QPieSeries()
         donut.setHoleSize(0.65)
         com_caixa = QPieSlice("Com cadastro", float(total_caixas))
         sem_caixa = QPieSlice("Sem cadastro", float(max(ultimo_dia - len([x for x in por_dia_caixas.values() if x > 0]), 0)))
