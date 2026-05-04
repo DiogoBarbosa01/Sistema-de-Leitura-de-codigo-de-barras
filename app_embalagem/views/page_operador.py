@@ -79,6 +79,7 @@ class PageOperador(QWidget):
         center.addWidget(subtitulo)
 
         graficos = QHBoxLayout()
+        graficos.setAlignment(Qt.AlignTop)
         self.chart_metros_view = QChartView()
         self.chart_caixas_view = QChartView()
         self.chart_metros_view.setRenderHint(QPainter.Antialiasing)
@@ -89,7 +90,8 @@ class PageOperador(QWidget):
         self.chart_caixas_view.setMaximumHeight(320)
         graficos.addWidget(self.chart_metros_view, 2)
         graficos.addWidget(self.chart_caixas_view, 1)
-        center.addLayout(graficos, 1)
+        center.addLayout(graficos)
+        center.addStretch()
 
         profile = QFrame()
         profile.setObjectName("opProfile")
