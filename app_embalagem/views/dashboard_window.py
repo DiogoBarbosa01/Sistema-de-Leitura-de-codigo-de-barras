@@ -1,5 +1,5 @@
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.caixa_service import CaixaService
@@ -37,18 +37,6 @@ class DashboardWindow(QWidget):
 
     def _montar_ui(self):
         root = QHBoxLayout()
-
-        sidebar = QFrame()
-        sidebar.setObjectName("dashSidebar")
-        sidebar_layout = QVBoxLayout(sidebar)
-        brand = QLabel("AnicornApp")
-        brand.setObjectName("dashBrand")
-        sidebar_layout.addWidget(brand)
-        menu = QListWidget()
-        for item in ["Dashboard", "Pedidos", "Rastreamento", "Receita", "Análises", "Configurações", "Sair"]:
-            QListWidgetItem(item, menu)
-        menu.setCurrentRow(0)
-        sidebar_layout.addWidget(menu)
 
         centro = QVBoxLayout()
 
@@ -107,17 +95,11 @@ class DashboardWindow(QWidget):
         profile_layout.addWidget(QLabel("• Dashboard atualizado"))
         profile_layout.addStretch()
 
-        root.addWidget(sidebar, 2)
-        root.addLayout(centro, 7)
+        root.addLayout(centro, 8)
         root.addWidget(profile, 3)
         self.setLayout(root)
         self.setStyleSheet(APP_STYLESHEET + """
-            QFrame#dashSidebar { background:#6D28D9; border-radius:18px; color:white; }
-            QLabel#dashBrand { color:white; font-size:24px; font-weight:700; padding:10px; }
             QFrame#dashProfile { background:#ffffff; border-radius:18px; padding:8px; }
-            QListWidget { background:transparent; border:none; color:white; }
-            QListWidget::item { padding:10px; border-radius:10px; margin:2px 0; }
-            QListWidget::item:selected { background:#fb7185; color:white; }
             QTableWidget { border-radius:14px; }
         """)
 
@@ -127,6 +109,8 @@ class DashboardWindow(QWidget):
             total_hoje = self.caixa_service.total_cadastradas_hoje(session)
             total_ultimo_dia = self.caixa_service.total_cadastradas_ultimo_dia(session)
             online = self.caixa_service.operadores_online_por_cadastro(session, janela_minutos=15)
+            if not online:
+                online = self.caixa_service.operadores_online_por_cadastro(session, janela_minutos=1440)
 
             self.total_hoje_label.setText(str(total_hoje))
             self.ultimo_dia_info.setText(f"Último dia: {total_ultimo_dia}")
