@@ -1,5 +1,5 @@
-from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtCore import QTimer, Qt
+from PySide6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
 from app_embalagem.database.connection import get_session
 from app_embalagem.services.mobile_request_service import MobileRequestService
 from app_embalagem.services.mobile_usb_service import MobileUsbService
@@ -22,7 +22,7 @@ class PageOperador(QWidget):
         self.mobile_usb_service = MobileUsbService()
         self.mobile_request_service = MobileRequestService()
         self.setWindowTitle(f"Página Operador - {usuario.nome}")
-        self.resize(760, 420)
+        self.resize(1280, 760)
         self._montar_ui()
         self.setStyleSheet(APP_STYLESHEET)
       
@@ -38,11 +38,30 @@ class PageOperador(QWidget):
         self.timer.start(1800)
 
     def _montar_ui(self):
-        layout = QVBoxLayout()
+        layout = QHBoxLayout()
 
-        titulo = QLabel("Área do Operador")
-        titulo.setObjectName("tituloPagina")
-        layout.addWidget(titulo)
+        sidebar = QFrame()
+        sidebar.setObjectName("opSidebar")
+        side_layout = QVBoxLayout(sidebar)
+        brand = QLabel("AnicornApp")
+        brand.setObjectName("opBrand")
+        side_layout.addWidget(brand)
+        menu = QListWidget()
+        for item in ["Dashboard", "Pedidos", "Rastreamento", "Receita", "Analytics", "Config", "Sair"]:
+            QListWidgetItem(item, menu)
+        menu.setCurrentRow(0)
+        side_layout.addWidget(menu)
+
+        center = QVBoxLayout()
+        header = QHBoxLayout()
+        titulo = QLabel("Analytics overview")
+        titulo.setObjectName("tituloDashboard")
+        header.addWidget(titulo)
+        header.addStretch()
+        search = QLabel("search...")
+        search.setObjectName("textoAux")
+        header.addWidget(search)
+        center.addLayout(header)
 
         status_linha = QHBoxLayout()
         self.mobile_status_label = QLabel("📱 celular: inválido")
@@ -50,12 +69,11 @@ class PageOperador(QWidget):
         status_linha.addWidget(self.mobile_status_label)
         status_linha.addWidget(self.host_status_label)
         status_linha.addStretch()
-        layout.addLayout(status_linha)
+        center.addLayout(status_linha)
 
         subtitulo = QLabel(f"Olá, {self.usuario.nome}. Selecione a ação desejada.")
         subtitulo.setObjectName("subtitulo")
-        layout.addWidget(subtitulo)
-
+        center.addWidget(subtitulo)
 
         botoes = QGridLayout()
         self.scanner_btn = QPushButton("Busca de Caixa")
@@ -72,9 +90,38 @@ class PageOperador(QWidget):
         botoes.addWidget(self.dash_btn, 0, 1)
         botoes.addWidget(self.cadastro_caixa_btn, 1, 0)
         botoes.addWidget(self.codigos_btn, 1, 1)
+        center.addLayout(botoes)
 
-        layout.addLayout(botoes)
+        profile = QFrame()
+        profile.setObjectName("opProfile")
+        profile_layout = QVBoxLayout(profile)
+        profile_layout.addWidget(QLabel("Profile"))
+        card = QFrame()
+        card.setObjectName("opProfileCard")
+        card_layout = QVBoxLayout(card)
+        name = QLabel(self.usuario.nome)
+        name.setAlignment(Qt.AlignCenter)
+        card_layout.addWidget(name)
+        card_layout.addWidget(QLabel("Operador"), alignment=Qt.AlignCenter)
+        profile_layout.addWidget(card)
+        profile_layout.addWidget(QLabel("Notification"))
+        profile_layout.addWidget(QLabel("• Conexão host monitorada"))
+        profile_layout.addWidget(QLabel("• Scanner pronto"))
+        profile_layout.addStretch()
+
+        layout.addWidget(sidebar, 2)
+        layout.addLayout(center, 7)
+        layout.addWidget(profile, 3)
         self.setLayout(layout)
+        self.setStyleSheet(APP_STYLESHEET + """
+            QFrame#opSidebar { background:#6D28D9; border-radius:18px; color:white; }
+            QLabel#opBrand { color:white; font-size:24px; font-weight:700; padding:10px; }
+            QListWidget { background:transparent; border:none; color:white; }
+            QListWidget::item { padding:10px; border-radius:10px; margin:2px 0; }
+            QListWidget::item:selected { background:#fb7185; color:white; }
+            QFrame#opProfile { background:#ffffff; border-radius:18px; padding:10px; }
+            QFrame#opProfileCard { background:qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #FDBA74, stop:1 #FB7185); border-radius:14px; min-height:180px; }
+        """)
 
     def closeEvent(self, event):
         self.mobile_request_service.parar()
