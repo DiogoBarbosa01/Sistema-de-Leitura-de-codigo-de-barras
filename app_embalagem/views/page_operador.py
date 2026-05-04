@@ -87,8 +87,12 @@ class PageOperador(QWidget):
         self.chart_metros_view.setMaximumHeight(320)
         self.chart_caixas_view.setMinimumHeight(280)
         self.chart_caixas_view.setMaximumHeight(320)
-        graficos.addWidget(self.chart_metros_view, 2)
-        graficos.addWidget(self.chart_caixas_view, 1)
+        self.chart_metros_view.setMaximumWidth(700)
+        self.chart_caixas_view.setMaximumWidth(360)
+        graficos.addStretch(1)
+        graficos.addWidget(self.chart_metros_view)
+        graficos.addWidget(self.chart_caixas_view)
+        graficos.addStretch(1)
         center.addLayout(graficos, 1)
 
         profile = QFrame()
@@ -125,9 +129,10 @@ class PageOperador(QWidget):
             APP_STYLESHEET
             + """
             QWidget { background: #F5F7FB; }
-            QFrame#opSidebar { background:#ffffff; border-radius:18px; color:#111827; border:1px solid #ececf1; }
+            QFrame#opSidebar { background:#ffffff; border-radius:18px; color:#111827; border:none; outline:none; }
             QLabel#opBrand { color:#111827; font-size:24px; font-weight:700; padding:10px; }
             QListWidget { background:transparent; border:none; color:#111827; outline:none; }
+            QFrame#opSidebar:focus, QListWidget:focus { border:none; outline:none; }
             QListWidget::item { padding:10px; border-radius:10px; margin:2px 0; border:none; }
             QListWidget::item:hover { background:#f3f4f6; border:none; }
             QListWidget::item:selected { background:#ede9fe; color:#7c3aed; border:none; }
