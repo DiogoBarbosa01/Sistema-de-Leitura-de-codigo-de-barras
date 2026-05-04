@@ -13,6 +13,7 @@ class Caixa(Base):
     codigo_caixa: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
     arte: Mapped[str] = mapped_column(String(120), nullable=False)
     artigo: Mapped[str] = mapped_column(String(60), nullable=False)
+    largura: Mapped[str] = mapped_column(String(10), nullable=False, default="40")
     cor: Mapped[str] = mapped_column(String(40), nullable=False, default="-")
     emendas: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     metros: Mapped[float] = mapped_column(Float, nullable=False)

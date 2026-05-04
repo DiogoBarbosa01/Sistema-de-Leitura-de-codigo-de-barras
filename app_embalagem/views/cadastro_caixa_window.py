@@ -25,7 +25,9 @@ class CadastroCaixaWindow(QWidget):
         self.caixa_service = CaixaService()
         self.funcionario_service = FuncionarioService()
         self.ultimo_arquivo = ""
+        self.ultimo_barcode_png: bytes | None = None
         self.setWindowTitle("Cadastro de Caixa / Etiqueta")
+        self.resize(640, 560)
         self._montar_ui()
         self._carregar_funcionarios()
         self.setStyleSheet(APP_STYLESHEET)
@@ -43,16 +45,20 @@ class CadastroCaixaWindow(QWidget):
         self.numero_pedido_input = QLineEdit()
         self.numero_pedido_input.setMaxLength(4)
         self.numero_pedido_input.setPlaceholderText("0000")
-        self.artigo_input = QLineEdit()
+        self.artigo_combo = QComboBox()
+        self.artigo_combo.addItems(["LAS VEGAS", "DUBAI", "NEW YORK", "BALI", "DALLAS"])
         self.cor_input = QLineEdit()
+        self.largura_combo = QComboBox()
+        self.largura_combo.addItems(["40", "35", "30", "25"])
         self.emendas_input = QLineEdit()
         self.emendas_input.setPlaceholderText("0")
         self.metros_input = QLineEdit()
         self.funcionario_combo = QComboBox()
 
         form.addRow("Nº do pedido:", self.numero_pedido_input)
-        form.addRow("Artigo:", self.artigo_input)
+        form.addRow("Artigo:", self.artigo_combo)
         form.addRow("Cor:", self.cor_input)
+        form.addRow("Largura:", self.largura_combo)
         form.addRow("Emendas:", self.emendas_input)
         form.addRow("Metros:", self.metros_input)
         form.addRow("Funcionário:", self.funcionario_combo)
@@ -93,7 +99,7 @@ class CadastroCaixaWindow(QWidget):
 
     def _gerar_etiqueta(self):
         erro_pedido = validar_numero_pedido(self.numero_pedido_input.text())
-        erro_artigo = validar_texto_obrigatorio(self.artigo_input.text(), "artigo")
+        erro_artigo = validar_texto_obrigatorio(self.artigo_combo.currentText(), "artigo")
         erro_cor = validar_texto_obrigatorio(self.cor_input.text(), "cor")
         erro_metros = validar_metros(self.metros_input.text().strip())
 
@@ -119,23 +125,26 @@ class CadastroCaixaWindow(QWidget):
             _caixa, caminho = self.caixa_service.criar_caixa(
                 session,
                 numero_pedido=self.numero_pedido_input.text().strip(),
-                artigo=self.artigo_input.text().strip(),
+                artigo=self.artigo_combo.currentText().strip(),
                 cor=self.cor_input.text().strip(),
+                largura=self.largura_combo.currentText().strip(),
                 emendas=emendas,
                 metros=float(self.metros_input.text().strip().replace(",", ".")),
                 nome_funcionario=funcionario["nome"],
                 matricula=funcionario["matricula"],
             )
             self.ultimo_arquivo = caminho
+            self.ultimo_barcode_png = _caixa.barcode_png
             self.info_label.setText(f"Arquivo de etiqueta: {caminho}")
-            self._mostrar_preview(caminho)
+            self._mostrar_preview(_caixa.barcode_png)
             self.imprimir_btn.setEnabled(True)
             QMessageBox.information(self, "Sucesso", "Etiqueta gerada e caixa registrada com sucesso.")
             self.numero_pedido_input.clear()
-            self.artigo_input.clear()
             self.cor_input.clear()
             self.emendas_input.clear()
             self.metros_input.clear()
+            self.artigo_combo.setCurrentIndex(0)
+            self.largura_combo.setCurrentIndex(0)
             
         except Exception as exc:
             session.rollback()
@@ -143,8 +152,10 @@ class CadastroCaixaWindow(QWidget):
         finally:
             session.close()
 
-    def _mostrar_preview(self, caminho: str):
-        pixmap = QPixmap(caminho)
+    def _mostrar_preview(self, barcode_png: bytes | None):
+        pixmap = QPixmap()
+        if barcode_png:
+            pixmap.loadFromData(barcode_png, "PNG")
         if pixmap.isNull():
             self.preview_label.setText("Não foi possível carregar a imagem da etiqueta.")
             return
@@ -159,7 +170,9 @@ class CadastroCaixaWindow(QWidget):
         if dialog.exec() != QPrintDialog.Accepted:
             return
 
-        pixmap = QPixmap(self.ultimo_arquivo)
+        pixmap = QPixmap()
+        if self.ultimo_barcode_png:
+            pixmap.loadFromData(self.ultimo_barcode_png, "PNG")
         if pixmap.isNull():
             QMessageBox.warning(self, "Impressão", "Imagem da etiqueta inválida.")
             return
