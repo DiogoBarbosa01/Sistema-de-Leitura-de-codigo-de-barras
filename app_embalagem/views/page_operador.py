@@ -7,6 +7,7 @@ from app_embalagem.services.scan_service import ScanService
 from app_embalagem.utils.sound import beep_scan
 from app_embalagem.utils.theme import APP_STYLESHEET
 from app_embalagem.views.caixa_detalhes_dialog import CaixaDetalhesDialog
+from app_embalagem.views.cadastro_caixa_window import CadastroCaixaWindow
 from app_embalagem.views.codigos_barras_window import CodigosBarrasWindow
 from app_embalagem.views.dashboard_window import DashboardWindow
 from app_embalagem.views.scanner_window import ScannerWindow
@@ -58,16 +59,19 @@ class PageOperador(QWidget):
 
         botoes = QGridLayout()
         self.scanner_btn = QPushButton("Busca de Caixa")
+        self.cadastro_caixa_btn = QPushButton("Cadastro de Caixa")
         self.dash_btn = QPushButton("Dashboard")
         self.codigos_btn = QPushButton("Códigos de Barras")
 
         self.scanner_btn.clicked.connect(self.abrir_scanner)
+        self.cadastro_caixa_btn.clicked.connect(self.abrir_cadastro_caixa)
         self.dash_btn.clicked.connect(self.abrir_dashboard)
         self.codigos_btn.clicked.connect(self.abrir_codigos)
 
         botoes.addWidget(self.scanner_btn, 0, 0)
         botoes.addWidget(self.dash_btn, 0, 1)
-        botoes.addWidget(self.codigos_btn, 1, 0)
+        botoes.addWidget(self.cadastro_caixa_btn, 1, 0)
+        botoes.addWidget(self.codigos_btn, 1, 1)
 
         layout.addLayout(botoes)
         self.setLayout(layout)
@@ -108,6 +112,10 @@ class PageOperador(QWidget):
     def abrir_scanner(self):
         self.w_scanner = ScannerWindow()
         self.w_scanner.show()
+
+    def abrir_cadastro_caixa(self):
+        self.w_cadastro_caixa = CadastroCaixaWindow()
+        self.w_cadastro_caixa.show()
 
     def abrir_dashboard(self):
         self.w_dash = DashboardWindow()

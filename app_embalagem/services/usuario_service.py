@@ -1,5 +1,6 @@
 from sqlalchemy import select
 
+from app_embalagem.models.funcionario import Funcionario
 from app_embalagem.models.usuario import Usuario
 from app_embalagem.services.auth_service import AuthService
 
@@ -33,6 +34,27 @@ class UsuarioService:
         session.add(usuario)
         session.commit()
         session.refresh(usuario)
+
+        if perfil == "operador":
+            matricula_operador = username.upper()
+            funcionario_existente = session.scalar(select(Funcionario).where(Funcionario.matricula == matricula_operador))
+            if not funcionario_existente:
+                codigo_base = f"FUNC-OP-{username.upper()}"
+                codigo = codigo_base
+                sufixo = 1
+                while session.scalar(select(Funcionario).where(Funcionario.codigo_barras == codigo)):
+                    codigo = f"{codigo_base}-{sufixo}"
+                    sufixo += 1
+
+                funcionario = Funcionario(
+                    nome=nome,
+                    matricula=matricula_operador,
+                    codigo_barras=codigo,
+                    ativo=ativo,
+                )
+                session.add(funcionario)
+                session.commit()
+
         return usuario
 
     def listar_usuarios(self, session):
