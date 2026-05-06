@@ -47,7 +47,7 @@ class PageOperador(QWidget):
         sidebar = QFrame()
         sidebar.setObjectName("opSidebar")
         side_layout = QVBoxLayout(sidebar)
-        brand = QLabel("AnicornApp")
+        brand = QLabel("Embalagem")
         brand.setObjectName("opBrand")
         side_layout.addWidget(brand)
 
@@ -192,7 +192,7 @@ class PageOperador(QWidget):
             session.close()
 
         chart_metros = QChart()
-        chart_metros.setTitle(f"Revenue • Metros no mês ({total_metros:.1f} m)")
+        chart_metros.setTitle(f" Toal de Metros no mês ({total_metros:.1f} m)")
         chart_metros.legend().hide()
 
         donut_metros = QPieSeries()
@@ -226,7 +226,7 @@ class PageOperador(QWidget):
         chart_caixas.addSeries(donut)
 
         centro = chart_caixas.title()
-        chart_caixas.setTitle(f"Device • Total: {total_caixas}")
+        chart_caixas.setTitle(f"Caixas Embaladas no mês • Total: {total_caixas}")
         chart_caixas.setBackgroundVisible(False)
         self.chart_caixas_view.setChart(chart_caixas)
 
