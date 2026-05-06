@@ -3,8 +3,9 @@ from datetime import date, datetime
 
 from PySide6.QtCharts import QChart, QChartView, QPieSeries, QPieSlice
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QVBoxLayout, QWidget
+from PySide6.QtGui import QColor, QPainter, QFont
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QVBoxLayout, QWidget, QGraphicsTextItem
+
 from sqlalchemy import func, select
 
 from app_embalagem.database.connection import get_session
@@ -191,30 +192,44 @@ class PageOperador(QWidget):
         finally:
             session.close()
 
-        chart_metros = QChart()
-        chart_metros.setTitle(f" Toal de Metros no mês ({total_metros:.1f} m)")
-        chart_metros.legend().hide()
+            chart_metros = QChart()
+            chart_metros.setTitle(f" TOTAL DE METROS NO MÊS")
+            chart_metros.legend().hide()
 
-        donut_metros = QPieSeries()
-        donut_metros.setHoleSize(0.65)
-        dias_com_metros = len([v for v in por_dia_metros.values() if v > 0])
-        dias_sem_metros = max(ultimo_dia - dias_com_metros, 0)
+            donut_metros = QPieSeries()
+            donut_metros.setHoleSize(0.65)
+            dias_com_metros = len([v for v in por_dia_metros.values() if v > 0])
+            dias_sem_metros = max(ultimo_dia - dias_com_metros, 0)
 
-        fatia_metros = QPieSlice("Com metros", float(total_metros if total_metros > 0 else 1))
-        fatia_sem_metros = QPieSlice("Sem metros", float(dias_sem_metros if dias_sem_metros > 0 else 1))
-        fatia_metros.setColor(QColor("#8B5CF6"))
-        fatia_sem_metros.setColor(QColor("#FDBA74"))
+            fatia_metros = QPieSlice("Com metros", float(total_metros if total_metros > 0 else 1))
+            fatia_sem_metros = QPieSlice("Sem metros", float(dias_sem_metros if dias_sem_metros > 0 else 1))
+            fatia_metros.setColor(QColor("#8B5CF6"))
+            fatia_sem_metros.setColor(QColor("#FDBA74"))
 
-        donut_metros.append(fatia_metros)
-        donut_metros.append(fatia_sem_metros)
-        chart_metros.addSeries(donut_metros)
-        chart_metros.setBackgroundVisible(False)
-        self.chart_metros_view.setChart(chart_metros)
-
+            donut_metros.append(fatia_metros)
+            donut_metros.append(fatia_sem_metros)
+            chart_metros.addSeries(donut_metros)
+            chart_metros.setBackgroundVisible(False)
+            self.chart_metros_view.setChart(chart_metros)
+            self.chart_metros_view.setRenderHint(QPainter.Antialiasing)
+        
+            texto_centro = QGraphicsTextItem (f"{total_metros:.1f}m")
+            texto_centro.setDefaultTextColor(QColor("#0552F7"))
+            font =QFont("Arial", 14)
+            font.setBold(True)
+            texto_centro.setFont(font)
+            self.chart_metros_view.scene().addItem(texto_centro)
+        
+            QTimer.singleShot(0, lambda: texto_centro.setPos(
+            chart_metros.plotArea().center().x() - texto_centro.boundingRect().width() / 2,
+            chart_metros.plotArea().center().y() - texto_centro.boundingRect().height() / 2
+        ))
+         
         chart_caixas = QChart()
         chart_caixas.setTitle("Device • Receita de Caixas")
         chart_caixas.legend().hide()
-
+   
+    
         donut = QPieSeries()
         donut.setHoleSize(0.65)
         com_caixa = QPieSlice("Com cadastro", float(total_caixas))
