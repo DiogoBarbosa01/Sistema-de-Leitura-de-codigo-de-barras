@@ -108,16 +108,17 @@ class DashboardWindow(QWidget):
         try:
             total_hoje = self.caixa_service.total_cadastradas_hoje(session)
             total_ultimo_dia = self.caixa_service.total_cadastradas_ultimo_dia(session)
-            online = self.caixa_service.operadores_online_por_cadastro(session, janela_minutos=15)
+            online = self.caixa_service.operadores_online(session, janela_segundos=15)
+            
             if not online:
-                online = self.caixa_service.operadores_online_por_cadastro(session, janela_minutos=1440)
+                online = online or []
 
             self.total_hoje_label.setText(str(total_hoje))
             self.ultimo_dia_info.setText(f"Último dia: {total_ultimo_dia}")
             self.online_label.setText(str(len(online)))
 
             if online:
-                self.online_detalhe.setText("Online: " + ", ".join([f"🟢 {nome}" for nome, _qtd in online]))
+                self.online_detalhe.setText("Online: " + ", ".join([f"🟢 {u.nome}" for u in online]))
             else:
                 self.online_detalhe.setText("Online: -")
 

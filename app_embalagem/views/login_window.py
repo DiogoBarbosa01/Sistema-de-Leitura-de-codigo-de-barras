@@ -18,6 +18,8 @@ from app_embalagem.views.cadastro_usuario_window import CadastroUsuarioWindow
 from app_embalagem.views.page_admin import PageAdmin
 from app_embalagem.views.page_operador import PageOperador
 from app_embalagem.utils.theme import APP_STYLESHEET
+from datetime import datetime
+
 
 
 class LoginWindow(QWidget):
@@ -100,3 +102,6 @@ class LoginWindow(QWidget):
             QMessageBox.critical(self, "Erro de login", f"Não foi possível realizar o login: {exc}")
         finally:
             session.close()
+            
+            usuario.ultima_atividade = datetime.now()
+            session.commit()

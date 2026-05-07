@@ -1,5 +1,6 @@
-from sqlalchemy import Boolean, String
+from sqlalchemy import Boolean, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 
 from app_embalagem.models.base import Base
 
@@ -13,3 +14,4 @@ class Usuario(Base):
     nome: Mapped[str] = mapped_column(String(120), nullable=False)
     perfil: Mapped[str] = mapped_column(String(20), nullable=False, default="operador")
     ativo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    ultima_atividade: Mapped[datetime] = mapped_column(DateTime,nullable=True,default=datetime.now)

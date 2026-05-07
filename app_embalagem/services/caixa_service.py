@@ -7,6 +7,7 @@ from sqlalchemy import desc, func, select
 from app_embalagem.models.caixa import Caixa
 from app_embalagem.models.movimentacao import Movimentacao
 from app_embalagem.services.barcode_service import BarcodeService
+from app_embalagem.models.usuario import Usuario
 
 
 class CaixaService:
@@ -115,12 +116,10 @@ class CaixaService:
     def total_cadastradas_ultimo_dia(self, session) -> int:
         return self.total_cadastradas_no_dia(session, date.today() - timedelta(days=1))
 
-    def operadores_online_por_cadastro(self, session, janela_minutos: int = 15):
-        limite = datetime.now() - timedelta(minutes=janela_minutos)
-        stmt = (
-            select(Caixa.nome_funcionario, func.count(Caixa.id))
-            .where(Caixa.data_criacao >= limite)
-            .group_by(Caixa.nome_funcionario)
-            .order_by(desc(func.count(Caixa.id)))
-        )
-        return session.execute(stmt).all()
+    def operadores_online(self, session, janela_segundos=15):
+
+        limite = datetime.now() - timedelta(seconds=janela_segundos)
+
+        usuarios = (session.query(Usuario).filter(Usuario.ultima_atividade >= limite).all()
+    )
+        return usuarios or []

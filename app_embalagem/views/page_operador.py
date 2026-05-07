@@ -1,5 +1,5 @@
 from calendar import monthrange
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from PySide6.QtCharts import QChart, QChartView, QPieSeries, QPieSlice
 from PySide6.QtCore import QTimer, Qt
@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QListWidget, QListWid
 from sqlalchemy import func, select
 
 from app_embalagem.database.connection import get_session
+from app_embalagem.models.usuario import Usuario
 from app_embalagem.models.caixa import Caixa
 from app_embalagem.services.mobile_request_service import MobileRequestService
 from app_embalagem.services.mobile_usb_service import MobileUsbService
@@ -20,18 +21,22 @@ from app_embalagem.views.cadastro_caixa_window import CadastroCaixaWindow
 from app_embalagem.views.codigos_barras_window import CodigosBarrasWindow
 from app_embalagem.views.dashboard_window import DashboardWindow
 from app_embalagem.views.scanner_window import ScannerWindow
-
-
+from app_embalagem.services.caixa_service import CaixaService
 class PageOperador(QWidget):
     def __init__(self, usuario):
         super().__init__()
         self.usuario = usuario
         self.scan_service = ScanService()
+        self.caixa_service = CaixaService()
         self.mobile_usb_service = MobileUsbService()
         self.mobile_request_service = MobileRequestService()
+        self.timer_online = QTimer(self)
+        self.timer_online.timeout.connect(self._heartbeat_online)
+        self.timer_online.start(5000)
         self.setWindowTitle(f"Página Operador - {usuario.nome}")
         self.resize(1380, 780)
         self._montar_ui()
+        
 
         try:
             self.mobile_request_service.iniciar()
@@ -107,11 +112,9 @@ class PageOperador(QWidget):
         card_layout.addWidget(QLabel("Operador"), alignment=Qt.AlignCenter)
         profile_layout.addWidget(card)
 
-        self.online_stats_label = QLabel("👥 Online: --")
         self.host_status_label = QLabel("🖥 Host: inválido")
         self.mobile_status_label = QLabel("📱 Celular: inválido")
         self.scanner_status_label = QLabel("📷 Scanner: pronto")
-        profile_layout.addWidget(self.online_stats_label)
         profile_layout.addWidget(self.host_status_label)
         profile_layout.addWidget(self.mobile_status_label)
         profile_layout.addWidget(self.scanner_status_label)
@@ -184,45 +187,40 @@ class PageOperador(QWidget):
             resultados_caixas = session.execute(stmt_caixas).all()
             por_dia_caixas = {int(str(dia).split("-")[-1]): int(total or 0) for dia, total in resultados_caixas}
             total_caixas = sum(por_dia_caixas.values())
-
-            online = session.execute(
-                select(func.count(func.distinct(Caixa.nome_funcionario))).where(Caixa.data_criacao >= datetime.now().replace(minute=0, second=0, microsecond=0))
-            ).scalar() or 0
-            self.online_stats_label.setText(f"👥 Online: {online}")
+            
         finally:
             session.close()
 
-            chart_metros = QChart()
-            chart_metros.setTitle(f" TOTAL DE METROS NO MÊS")
-            chart_metros.legend().hide()
+        chart_metros = QChart()
+        chart_metros.setTitle(f" TOTAL DE METROS NO MÊS")
+        chart_metros.legend().hide()
 
-            donut_metros = QPieSeries()
-            donut_metros.setHoleSize(0.65)
-            dias_com_metros = len([v for v in por_dia_metros.values() if v > 0])
-            dias_sem_metros = max(ultimo_dia - dias_com_metros, 0)
+        donut_metros = QPieSeries()
+        donut_metros.setHoleSize(0.65)
+        dias_com_metros = len([v for v in por_dia_metros.values() if v > 0])
+        dias_sem_metros = max(ultimo_dia - dias_com_metros, 0)
+        fatia_metros = QPieSlice("Com metros", float(total_metros if total_metros > 0 else 1))
+        fatia_sem_metros = QPieSlice("Sem metros", float(dias_sem_metros if dias_sem_metros > 0 else 1))
+        fatia_metros.setColor(QColor("#8B5CF6"))
+        fatia_sem_metros.setColor(QColor("#FDBA74"))
 
-            fatia_metros = QPieSlice("Com metros", float(total_metros if total_metros > 0 else 1))
-            fatia_sem_metros = QPieSlice("Sem metros", float(dias_sem_metros if dias_sem_metros > 0 else 1))
-            fatia_metros.setColor(QColor("#8B5CF6"))
-            fatia_sem_metros.setColor(QColor("#FDBA74"))
-
-            donut_metros.append(fatia_metros)
-            donut_metros.append(fatia_sem_metros)
-            chart_metros.addSeries(donut_metros)
-            chart_metros.setBackgroundVisible(False)
-            self.chart_metros_view.setChart(chart_metros)
-            self.chart_metros_view.setRenderHint(QPainter.Antialiasing)
+        donut_metros.append(fatia_metros)
+        donut_metros.append(fatia_sem_metros)
+        chart_metros.addSeries(donut_metros)
+        chart_metros.setBackgroundVisible(False)
+        self.chart_metros_view.setChart(chart_metros)
+        self.chart_metros_view.setRenderHint(QPainter.Antialiasing)
         
-            texto_centro = QGraphicsTextItem (f"{total_metros:.1f}m")
-            texto_centro.setDefaultTextColor(QColor("#0552F7"))
-            font =QFont("Arial", 14)
-            font.setBold(True)
-            texto_centro.setFont(font)
-            self.chart_metros_view.scene().addItem(texto_centro)
+        center_text = QGraphicsTextItem (f"{total_metros:}Metros")
+        center_text.setDefaultTextColor(QColor("#0552F7"))
+        font =QFont("Arial", 14)
+        font.setBold(True)
+        center_text.setFont(font)
+        self.chart_metros_view.scene().addItem(center_text)
         
-            QTimer.singleShot(0, lambda: texto_centro.setPos(
-            chart_metros.plotArea().center().x() - texto_centro.boundingRect().width() / 2,
-            chart_metros.plotArea().center().y() - texto_centro.boundingRect().height() / 2
+        QTimer.singleShot(0, lambda: center_text.setPos(
+            chart_metros.plotArea().center().x() - center_text.boundingRect().width() / 2,
+            chart_metros.plotArea().center().y() - center_text.boundingRect().height() / 2
         ))
          
         chart_caixas = QChart()
@@ -240,11 +238,24 @@ class PageOperador(QWidget):
         donut.append(sem_caixa)
         chart_caixas.addSeries(donut)
 
-        centro = chart_caixas.title()
-        chart_caixas.setTitle(f"Caixas Embaladas no mês • Total: {total_caixas}")
+       
+        chart_caixas.setTitle("Caixas Embaladas no mês")
         chart_caixas.setBackgroundVisible(False)
         self.chart_caixas_view.setChart(chart_caixas)
-
+        self.chart_caixas_view.setRenderHint(QPainter.Antialiasing)
+        
+        texto_centro = QGraphicsTextItem (f"{total_caixas:}caixas")
+        texto_centro.setDefaultTextColor(QColor("#0552F7"))
+        font =QFont("Arial", 14)
+        font.setBold(True)
+        texto_centro.setFont(font)
+        self.chart_caixas_view.scene().addItem(texto_centro)
+        
+        QTimer.singleShot(0, lambda: texto_centro.setPos(
+            chart_caixas.plotArea().center().x() - texto_centro.boundingRect().width() / 2,
+            chart_caixas.plotArea().center().y() - texto_centro.boundingRect().height() / 2
+        ))
+        
     def closeEvent(self, event):
         self.mobile_request_service.parar()
         super().closeEvent(event)
@@ -291,3 +302,18 @@ class PageOperador(QWidget):
     def abrir_codigos(self):
         self.w_codigos = CodigosBarrasWindow()
         self.w_codigos.show()
+    
+    def _heartbeat_online(self):
+        session = get_session()
+
+        try:
+           usuario = session.query(Usuario).filter_by(id=self.usuario.id).first()
+
+           if usuario:
+            usuario.ultima_atividade = datetime.now()
+            session.commit()
+
+        finally:
+            session.close()
+            
+   
